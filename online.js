@@ -13,6 +13,11 @@ export class Online {
         this.randomInt = Math.floor(Math.random() * 2 ** 63);
     }
 
+    /**
+     * Создаёт игровую комнату
+     *
+     * Возвращает Promise
+     */
     createGame() {
         return database.ref('gameRooms').get()
             .then((snapshot) => {
@@ -34,14 +39,21 @@ export class Online {
                     users: {[this.randomInt]: this.userName},
                 })
                 this.roomId = roomId;
-                return roomId;
             })
             .catch((error) => {
                 console.log(error);
             });
     }
 
-    joinGame(roomId) {  // Возвращает promise, где
+    /**
+     * Подключает пользователя к игровой комнате.
+     *
+     * Возвращает Promise, где
+     * null - комнаты не существует
+     * true - успешный вхлж в комнату
+     * false - камната заполнена
+     */
+    joinGame(roomId) {
         return database.ref('gameRooms/' + roomId).transaction((roomData) => {
             if (!roomData)
                 return roomData;
@@ -62,6 +74,9 @@ export class Online {
             });
     }
 
+    /**
+     * Отключает игрока от комнаты
+     */
     leaveGame() {
         database.ref('gameRooms/' + this.roomId).transaction((roomData) => {
             console.log(roomData);
