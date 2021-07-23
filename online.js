@@ -15,11 +15,9 @@ export class Online {
 
     /**
      * Создаёт игровую комнату
-     *
-     * Возвращает Promise
      */
     createGame() {
-        return database.ref('gameRooms').get()
+        database.ref('gameRooms').get()
             .then((snapshot) => {
                 let data = {};
                 if (snapshot.exists()) {
