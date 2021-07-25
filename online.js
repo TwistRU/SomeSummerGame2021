@@ -1,22 +1,36 @@
 import {
     MAX_USERS_IN_ROOM,
-    firebaseConfig
+    firebaseConfig,
 } from "./constants.js";
+
+import {
+    genTable,
+} from "./game-logic.js";
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
+if (location.hostname === "localhost") { // TODO удалить
+    // Point to the RTDB emulator running on localhost.
+    database.useEmulator("localhost", 9000);
+}
+
 export class Online {
     constructor(userName) {
         this.userName = userName;
         this.randomInt = Math.floor(Math.random() * 2 ** 63);
+        this.roomId = null;
+        this.table = null;
+        this.host = null;
+        this.nowTurn = null;
     }
 
     /**
      * Создаёт игровую комнату
      */
     createGame() {
+        this.host = true;
         database.ref('gameRooms').get()
             .then((snapshot) => {
                 let data = {};
@@ -52,11 +66,12 @@ export class Online {
      * false - камната заполнена
      */
     joinGame(roomId) {
+        this.host = false;
         return database.ref('gameRooms/' + roomId).transaction((roomData) => {
             if (!roomData)
                 return roomData;
-            if (Object.keys(roomData['users']).length + 1 <= MAX_USERS_IN_ROOM)
-                roomData['users'][this.randomInt] = this.userName;
+            if (roomData.status === 'wait' && Object.keys(roomData.users).length + 1 <= MAX_USERS_IN_ROOM)
+                roomData.users[this.randomInt] = this.userName;
 
             return roomData;
         })
@@ -86,6 +101,42 @@ export class Online {
                 delete roomData.users[this.randomInt];
             console.log(roomData);
             return roomData;
+        })
+            .then(() => {
+                this.roomId = null;
+            })
+    }
+
+    startGame() {  // запускает только создатель лобби
+        if (!this.host)
+            return;
+        database.ref('gameRooms/' + this.roomId + '/status').set('run')
+        database.ref('gameSessions/' + this.roomId).set({
+            table: genTable(),
+        })
+    }
+
+    startListeningGameInfo() {
+        return database.ref('gameSessions/' + this.roomId).on('value', (snapshot) => {
+            let data = snapshot.val();
+            console.log("new data");
+            if (!data)
+                return;
+            this.table = data.table;
+            this.nowTurn = data.nowTurn;
+            this.players = data.players;
         });
+    }
+
+    getTable() {
+        return this.table;
+    }
+
+    makeMove(newTable) {
+        // let playersId = Object.keys(this.players);
+        database.ref('gameSessions/' + this.roomId).update({
+            data: newTable,
+            // nowTurn: this.players[(playersId[this.randomInt] + 1) % playersId.length],
+        })
     }
 }
