@@ -1,8 +1,8 @@
 // const { parse } = require("node:path");
 
 const app = new PIXI.Application({
-    width: 3000,
-    height: 2000,
+    width: window.innerWidth,
+    height: window.innerHeight,
     // transparent: true
 });
 document.body.appendChild(app.view);
@@ -104,33 +104,6 @@ function setup() {               //  Main  //
     let mapContainer = new PIXI.Container();
     let castleContainer = new PIXI.Container();
 
-
-    let left_border, right_border, up_border, down_border;  // здесь должны быть нормальные текстуры
-    left_border = new PIXI.Graphics();                      // здесь создаются границы
-    left_border.lineStyle(2, 0xc7cb28);
-    left_border.beginFill(0xcbc5f07);
-    left_border.drawRect(0, 0, 15, 1080);
-    left_border.endFill();
-
-    right_border = new PIXI.Graphics();
-    right_border.lineStyle(2, 0xc7cb28);
-    right_border.beginFill(0xcbc5f07);
-    right_border.drawRect(1920 - 15, 0, 15, 1080);
-    right_border.endFill();
-
-    up_border = new PIXI.Graphics();
-    up_border.lineStyle(2, 0xc7cb28);
-    up_border.beginFill(0xcbc5f07);
-    up_border.drawRect(0, 0, 1920, 15);
-    up_border.endFill();
-
-    down_border = new PIXI.Graphics();
-    down_border.lineStyle(2, 0xc7cb28);
-    down_border.beginFill(0xcbc5f07);
-    down_border.drawRect(0, 1080 - 15, 1920, 15);
-    down_border.endFill();
-
-
     /////   параметры игроков   /////
 
     let player_number = 1;                               // это, в принципе, не нужно, но если мы прикрутим генерацию замков,
@@ -161,20 +134,11 @@ function setup() {               //  Main  //
 
 
     ///////// utils ///////
+    let mouseDownLastPos = null;
 
 
     createMap(size_x, size_y, seed);
     fillMap(castles);
-    mapContainer.x += 15;
-    mapContainer.y += 15;
-    castleContainer.x += 15;
-    castleContainer.y += 15;
-
-
-    app.stage.addChild(left_border);
-    app.stage.addChild(right_border);
-    app.stage.addChild(up_border);
-    app.stage.addChild(down_border);
 
 
     function createMap(size_x, size_y, seed) {     // создание карты
@@ -192,14 +156,13 @@ function setup() {               //  Main  //
             for (let j = 0; j < size_x; j++) {   // создаем спрайты клеток
                 let current_tile = new PIXI.Sprite(TileTextures[current_tile_number]);
                 current_tile_number = (current_tile_number + seed[1]) % 4;// здесь может поломаться, если будет больше 4 плиток
-                if (((i + 1) * size_y + j + 1) % seed[2] == 0) {
+                if (((i + 1) * size_y + j + 1) % seed[2] === 0) {
                     current_tile_number = (current_tile_number + seed[3]) % 4; // + разнообразие карты
                 }
-                if (((i + 1) * size_y + j + 1) % seed[4] == 0) {
+                if (((i + 1) * size_y + j + 1) % seed[4] === 0) {
                     current_tile_number = (current_tile_number + seed[5]) % 4; // + разнообразие карты
                 }
 
-                // current_tile.scale.set(0.25, 0.25);     // ахтунг! здесь может всё сломаться, если размер плитки не 512*512
                 current_tile.width = tile_size;
                 current_tile.height = tile_size;
                 current_tile.position.set(j * tile_size, i * tile_size);
@@ -214,15 +177,30 @@ function setup() {               //  Main  //
                 map[i][j].interactive = true;
                 map[i][j].on('pointerover', mouseOverTile.bind(null, i, j));
                 map[i][j].on('pointerout', mouseOutOfTile.bind(null, i, j));
-                map[i][j].on('pointerdown', setPointerDown);
-                map[i][j].on('pointerup', mouseLeftClickTile.bind(null, i, j));
+                map[i][j].on('click', mousePointerClick.bind(null, i, j));
             }
         }
+        // Подключаем pan zoom
+        app.stage.interactive = true;
+        app.stage.mousemove = mouseMove;
+        app.stage.mousedown = mouseDown;
+        document.addEventListener('mouseup', mouseUp);
     }
 
+    function mouseDown(e) {
+        mouseDownLastPos = {x: e.data.originalEvent.offsetX, y: e.data.originalEvent.offsetY};
+    }
 
-    function setPointerDown() {  // это, наверное, можно было бы сделать по другому, но я не знаю, как
-        pointer_down = true;
+    function mouseUp(e) {
+        mouseDownLastPos = null;
+    }
+
+    function mouseMove(e) {
+        if (mouseDownLastPos) {
+            app.stage.x = Math.min(0, (Math.max(-app.screen.width, app.stage.x + (e.data.originalEvent.offsetX - mouseDownLastPos.x))));
+            app.stage.y = Math.min(0, (Math.max(-app.screen.height, app.stage.y + (e.data.originalEvent.offsetY - mouseDownLastPos.y))));
+            mouseDownLastPos = {x: e.data.originalEvent.offsetX, y: e.data.originalEvent.offsetY};
+        }
     }
 
 
@@ -235,43 +213,41 @@ function setup() {               //  Main  //
         pointer_down = false;
     }
 
-    function mouseLeftClickTile(i, j) {
-        if (pointer_down) {
-            console.log(contents[i][j]);
-            console.log(army_selected);
-            if (contents[i][j].army != null && contents[i][j].castle == null) {
-                console.log("army here")
-                if (army_selected[0] == -1) {
-                    army_selected = [i, j];
-                    contents[i][j].army.sprite.tint = 0xff7777;
-                    // console.log("clicked");
-                } else if (army_selected[0] == i && army_selected[1] == j) {
-                    army_selected = [-1, -1];
-                    contents[i][j].army.sprite.tint = 0xffffff;
-                    // console.log("unclicked");
-                }
-            } else if (contents[i][j].army == null && contents[i][j].castle != null) {
-
-            } else {
-                if (army_selected[0] != -1) {
-
-                    let from_x, from_y, to_x, to_y;
-                    from_x = 15 + army_selected[1] * tile_size + tile_size * 0.5;
-                    from_y = 15 + army_selected[0] * tile_size + tile_size * 0.5;
-                    to_x = 15 + j * tile_size + tile_size * 0.5;
-                    to_y = 15 + i * tile_size + tile_size * 0.5;
-
-                    // moveArmyFromTo(from_x, from_y, to_x, to_y, ARMY_SPEED, contents[army_selected[1]][army_selected[0]]);
-                    contents[i][j].army = contents[army_selected[0]][army_selected[1]].army;
-                    contents[army_selected[0]][army_selected[1]].army = null;
-
-                    contents[i][j].army.sprite.x = 15 + j * tile_size + tile_size * 0.5;
-                    contents[i][j].army.sprite.y = 15 + i * tile_size + tile_size * 0.5;
-
-                    army_selected = [i, j];
-                }
+    function mousePointerClick(i, j) {
+        console.log('click');
+        console.log(contents[i][j]);
+        console.log(army_selected);
+        if (contents[i][j].army != null && contents[i][j].castle == null) {
+            console.log("army here")
+            if (army_selected[0] == -1) {
+                army_selected = [i, j];
+                contents[i][j].army.sprite.tint = 0xff7777;
+                // console.log("clicked");
+            } else if (army_selected[0] == i && army_selected[1] == j) {
+                army_selected = [-1, -1];
+                contents[i][j].army.sprite.tint = 0xffffff;
+                // console.log("unclicked");
             }
-            pointer_down = false;
+        } else if (contents[i][j].army == null && contents[i][j].castle != null) {
+
+        } else {
+            if (army_selected[0] != -1) {
+
+                let from_x, from_y, to_x, to_y;
+                from_x = army_selected[1] * tile_size + tile_size * 0.5;
+                from_y = army_selected[0] * tile_size + tile_size * 0.5;
+                to_x = j * tile_size + tile_size * 0.5;
+                to_y = i * tile_size + tile_size * 0.5;
+
+                // moveArmyFromTo(from_x, from_y, to_x, to_y, ARMY_SPEED, contents[army_selected[1]][army_selected[0]]);
+                contents[i][j].army = contents[army_selected[0]][army_selected[1]].army;
+                contents[army_selected[0]][army_selected[1]].army = null;
+
+                contents[i][j].army.sprite.x = j * tile_size + tile_size * 0.5;
+                contents[i][j].army.sprite.y = i * tile_size + tile_size * 0.5;
+
+                army_selected = [i, j];
+            }
         }
     }
 
@@ -283,7 +259,7 @@ function setup() {               //  Main  //
             let current_castle;
 
 
-            if (castles[i].player_id == 0) {
+            if (castles[i].player_id === 0) {
                 current_castle = new PIXI.Sprite(Tcastle_1_big_red);    // переписать!
             } else {
                 current_castle = new PIXI.Sprite(Tcastle_1_big_grey);
@@ -300,7 +276,7 @@ function setup() {               //  Main  //
         let warrior = new PIXI.Sprite(Twarrior_test);
         warrior.anchor.set(0.5);
         warrior.scale.set(tile_size / 1000);
-        warrior.position.set(j * tile_size + tile_size * 0.5 + 15, i * tile_size + tile_size * 0.5 + 15);
+        warrior.position.set(j * tile_size + tile_size * 0.5, i * tile_size + tile_size * 0.5);
         app.stage.addChild(warrior);
 
         let cur_army = new Army(number, player_id, STAMINA, warrior, i, j);
@@ -342,8 +318,9 @@ function setup() {               //  Main  //
 
 
     createArmy(3, 3, 1, 0);
-
-
+    let k = 1.5;
+    app.stage.scale.x *= k;
+    app.stage.scale.y *= k;
     ///////////////////////    Some ball    //////////////////
 
 
