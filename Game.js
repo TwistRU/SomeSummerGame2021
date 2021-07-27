@@ -32,7 +32,7 @@ const STAMINA = 5;
 const ARMY_SPEED = 5;
 
 
-let castles = [];    
+let castles = [];
 let armies = [];
 let players = [];
 
@@ -40,12 +40,8 @@ let map = [];       // здесь клетки карты, на которые �
 let contents = [];  // здесь всё, что находится на этих клетках
 
 
-
-
-
-
-class Army{
-    constructor(player_id, number, stamina, sprite, pos_x, pos_y){
+class Army {
+    constructor(player_id, number, stamina, sprite, pos_x, pos_y) {
         this.player_id = player_id;
         this.number = number;
         this.stamina = stamina;
@@ -55,8 +51,8 @@ class Army{
     }
 }
 
-class Castle{
-    constructor(player_id = -1, number_of_soldiers = 0, pos_x, pos_y){
+class Castle {
+    constructor(player_id = -1, number_of_soldiers = 0, pos_x, pos_y) {
         this.player_id = player_id;
         this.number_of_soldiers = number_of_soldiers;
         this.pos_x = pos_x;
@@ -65,14 +61,14 @@ class Castle{
 }
 
 class Tile {
-    constructor(army = null, castle = null){
+    constructor(army = null, castle = null) {
         this.army = army;
         this.castle = castle;
     }
 }
 
-class Player{
-    constructor(){
+class Player {
+    constructor() {
         this.color = null;
         this.castles = [];
         this.armies = [];
@@ -81,10 +77,7 @@ class Player{
 }
 
 
-
-
-
-function setup(){               //  Main  //
+function setup() {               //  Main  //
     let TGrass_01 = PIXI.Loader.shared.resources['files/Grass_01.png'].texture;  // создаю текстуры
     let TGrass_02 = PIXI.Loader.shared.resources['files/Grass_02.png'].texture;
     let TGrass_03 = PIXI.Loader.shared.resources['files/Grass_03.png'].texture;
@@ -93,7 +86,12 @@ function setup(){               //  Main  //
     let Tcastle_1_big_red = PIXI.Loader.shared.resources['files/castles/1_CASTLE/big_tower_red.png'].texture;
     let Tcastle_1_big_grey = PIXI.Loader.shared.resources['files/castles/1_CASTLE/big_tower_grey.png'].texture;
     let Twarrior_test = PIXI.Loader.shared.resources['files/warriors/1_KNIGHT/IDLE.png'].texture;
-
+    let TileTextures = {
+        0: TGrass_01,
+        1: TGrass_02,
+        2: TGrass_03,
+        3: TGrass_04,
+    }
 
 
     /////   параметры карты   /////
@@ -105,7 +103,6 @@ function setup(){               //  Main  //
 
     let mapContainer = new PIXI.Container();
     let castleContainer = new PIXI.Container();
-    
 
 
     let left_border, right_border, up_border, down_border;  // здесь должны быть нормальные текстуры
@@ -120,7 +117,7 @@ function setup(){               //  Main  //
     right_border.beginFill(0xcbc5f07);
     right_border.drawRect(1920 - 15, 0, 15, 1080);
     right_border.endFill();
-    
+
     up_border = new PIXI.Graphics();
     up_border.lineStyle(2, 0xc7cb28);
     up_border.beginFill(0xcbc5f07);
@@ -134,9 +131,6 @@ function setup(){               //  Main  //
     down_border.endFill();
 
 
-    
-
-
     /////   параметры игроков   /////
 
     let player_number = 1;                               // это, в принципе, не нужно, но если мы прикрутим генерацию замков,
@@ -144,14 +138,14 @@ function setup(){               //  Main  //
     let castle_position = [[1, 1], [2, 6], [9, 4]];
     let belongs_to = [[0]];                             // n-му игроку принадлежат все города из соответстующего массива
 
-    for (let i = 0; i < castle_number; i++){   // создаем замки
+    for (let i = 0; i < castle_number; i++) {   // создаем замки
         let cur_castle = new Castle(-1, 0, castle_position[i][1], castle_position[i][0]);
         castles.push(cur_castle);
     }
 
-    for (let i = 0; i < player_number; i++){      // создаем игроков
+    for (let i = 0; i < player_number; i++) {      // создаем игроков
         let cur_player = new Player();
-        for (let j = 0; j < belongs_to[i].length; j++){
+        for (let j = 0; j < belongs_to[i].length; j++) {
             castles[belongs_to[i][j]].player_id = i;
             cur_player.castles.push(castles[belongs_to[i][j]]);
         }
@@ -159,15 +153,11 @@ function setup(){               //  Main  //
     }
 
 
-
-
     ///////// utils /////////////////////////////////////////////////////////////////////////////////////////////////
 
     let pointer_down = false;
     let castle_selected = null;
     let army_selected = [-1, -1];
-
-
 
 
     ///////// utils ///////
@@ -180,53 +170,33 @@ function setup(){               //  Main  //
     castleContainer.x += 15;
     castleContainer.y += 15;
 
-    
+
     app.stage.addChild(left_border);
     app.stage.addChild(right_border);
     app.stage.addChild(up_border);
     app.stage.addChild(down_border);
 
 
+    function createMap(size_x, size_y, seed) {     // создание карты
 
-    function createMap(size_x, size_y, seed){     // создание карты
-        
-        for (let i = 0; i < size_x; i++){         // ресайзим массив содержания
+        for (let i = 0; i < size_x; i++) {         // ресайзим массив содержания
             contents.push([]);
-            for (let j = 0; j < size_y; j++){
+            for (let j = 0; j < size_y; j++) {
                 let t = new Tile();
                 contents[i].push(t);
             }
         }
-        let current_tile_number = seed[0];             // изменить, если будет больше 9 видов плиток
-        for (let i = 0; i < size_y; i++){
+        let current_tile_number = seed[0];
+        for (let i = 0; i < size_y; i++) {
             map.push([]);
-            contents.push([]);
-            for (let j = 0; j < size_x; j++){   // создаем спрайты клеток
-                let current_tile;
-                switch (current_tile_number){
-                    case 0:
-                        current_tile = new PIXI.Sprite(TGrass_01);
-                        break;
-                    case 1:
-                        current_tile = new PIXI.Sprite(TGrass_02);
-                        break;
-                    case 2:
-                        current_tile = new PIXI.Sprite(TGrass_03);
-                        current_tile.alpha = 0.9;
-                        break;
-                    case 3:
-                        current_tile = new PIXI.Sprite(TGrass_04);
-                        break;
-                    default:
-                        console.log('Invalid starting tile number parameter');
-                        debugger;
-                }
+            for (let j = 0; j < size_x; j++) {   // создаем спрайты клеток
+                let current_tile = new PIXI.Sprite(TileTextures[current_tile_number]);
                 current_tile_number = (current_tile_number + seed[1]) % 4;// здесь может поломаться, если будет больше 4 плиток
-                if (((i + 1) * size_y + j + 1) % seed[2] == 0){
-                    current_tile_number = (current_tile_number +seed[3]) % 4; // + разнообразие карты
+                if (((i + 1) * size_y + j + 1) % seed[2] == 0) {
+                    current_tile_number = (current_tile_number + seed[3]) % 4; // + разнообразие карты
                 }
-                if (((i + 1) * size_y + j + 1) % seed[4] == 0){
-                    current_tile_number = (current_tile_number +seed[5]) % 4; // + разнообразие карты
+                if (((i + 1) * size_y + j + 1) % seed[4] == 0) {
+                    current_tile_number = (current_tile_number + seed[5]) % 4; // + разнообразие карты
                 }
 
                 // current_tile.scale.set(0.25, 0.25);     // ахтунг! здесь может всё сломаться, если размер плитки не 512*512
@@ -238,8 +208,8 @@ function setup(){               //  Main  //
             }
         }
         app.stage.addChild(mapContainer);
-        for (let i = 0; i < size_y; i++){
-            for (let j = 0; j < size_x; j++){
+        for (let i = 0; i < size_y; i++) {
+            for (let j = 0; j < size_x; j++) {
                 mapContainer.addChild(map[i][j]);
                 map[i][j].interactive = true;
                 map[i][j].on('pointerover', mouseOverTile.bind(null, i, j));
@@ -251,43 +221,39 @@ function setup(){               //  Main  //
     }
 
 
-
-    function setPointerDown(){  // это, наверное, можно было бы сделать по другому, но я не знаю, как
+    function setPointerDown() {  // это, наверное, можно было бы сделать по другому, но я не знаю, как
         pointer_down = true;
     }
 
 
-    function mouseOverTile(i, j){    // если мышка над клеткой - клетка темнеет
+    function mouseOverTile(i, j) {    // если мышка над клеткой - клетка темнеет
         map[i][j].alpha -= 0.25;
     }
 
-    function mouseOutOfTile(i, j){
+    function mouseOutOfTile(i, j) {
         map[i][j].alpha += 0.25;
         pointer_down = false;
     }
 
-    function mouseLeftClickTile(i, j){
-        if (pointer_down){
+    function mouseLeftClickTile(i, j) {
+        if (pointer_down) {
             console.log(contents[i][j]);
             console.log(army_selected);
-            if (contents[i][j].army != null && contents[i][j].castle == null){
+            if (contents[i][j].army != null && contents[i][j].castle == null) {
                 console.log("army here")
-                if (army_selected[0] == -1){
+                if (army_selected[0] == -1) {
                     army_selected = [i, j];
                     contents[i][j].army.sprite.tint = 0xff7777;
                     // console.log("clicked");
-                }
-                else if (army_selected[0] == i && army_selected[1] == j){
+                } else if (army_selected[0] == i && army_selected[1] == j) {
                     army_selected = [-1, -1];
                     contents[i][j].army.sprite.tint = 0xffffff;
                     // console.log("unclicked");
                 }
-            }
-            else if (contents[i][j].army == null && contents[i][j].castle != null){
+            } else if (contents[i][j].army == null && contents[i][j].castle != null) {
 
-            }
-            else {
-                if (army_selected[0] != -1){
+            } else {
+                if (army_selected[0] != -1) {
 
                     let from_x, from_y, to_x, to_y;
                     from_x = 15 + army_selected[1] * tile_size + tile_size * 0.5;
@@ -310,20 +276,17 @@ function setup(){               //  Main  //
     }
 
 
-
-
-    function fillMap(castles){      // наполняем содержание (пока только замками)
+    function fillMap(castles) {      // наполняем содержание (пока только замками)
         app.stage.addChild(castleContainer);
-        for (let i = 0; i < castles.length; i++){
+        for (let i = 0; i < castles.length; i++) {
             contents[castles[i].pos_x][castles[i].pos_y].castle = castles[i];
             let current_castle;
-        
 
-            if (castles[i].player_id == 0){
+
+            if (castles[i].player_id == 0) {
                 current_castle = new PIXI.Sprite(Tcastle_1_big_red);    // переписать!
-            }
-            else {
-               current_castle = new PIXI.Sprite(Tcastle_1_big_grey);
+            } else {
+                current_castle = new PIXI.Sprite(Tcastle_1_big_grey);
             }
             current_castle.anchor.set(0.5);
             current_castle.scale.set(tile_size * 1.5 / 955);
@@ -333,7 +296,7 @@ function setup(){               //  Main  //
     }
 
 
-    function createArmy(i, j, number, player_id){     // создаю армию из пока одного солдата
+    function createArmy(i, j, number, player_id) {     // создаю армию из пока одного солдата
         let warrior = new PIXI.Sprite(Twarrior_test);
         warrior.anchor.set(0.5);
         warrior.scale.set(tile_size / 1000);
@@ -346,8 +309,7 @@ function setup(){               //  Main  //
     }
 
 
-
-    function moveArmyFromTo(from_x, from_y, to_x, to_y, speed = ARMY_SPEED, sprite){
+    function moveArmyFromTo(from_x, from_y, to_x, to_y, speed = ARMY_SPEED, sprite) {
         let delta_x = to_x - from_x,
             delta_y = to_y - from_y,
             path_length = Math.sqrt(delta_x * delta_x + delta_y * delta_y),
@@ -357,12 +319,12 @@ function setup(){               //  Main  //
 
         app.ticker.add(armyMoveAnimation);
 
-        function armyMoveAnimation(){
+        function armyMoveAnimation() {
             let next_finish = false;
-            if (Math.sqrt((to_x - sprite.x)*(to_x - sprite.x) + (to_y - sprite.y)*(to_y - sprite.y)) <= speed){
+            if (Math.sqrt((to_x - sprite.x) * (to_x - sprite.x) + (to_y - sprite.y) * (to_y - sprite.y)) <= speed) {
                 next_finish = true;
             }
-            if (next_finish){
+            if (next_finish) {
                 sprite.x = to_x;
                 sprite.y = to_y;
                 app.ticker.remove(armyMoveAnimation);
@@ -382,18 +344,6 @@ function setup(){               //  Main  //
     createArmy(3, 3, 1, 0);
 
 
-    
-
-
-
-
-
-
-
-
-
-
-
     ///////////////////////    Some ball    //////////////////
 
 
@@ -401,7 +351,7 @@ function setup(){               //  Main  //
     // let ball_selected_texture = PIXI.Loader.shared.resources['files/ball_2_selected.png'].texture;
 
     // let ball = new PIXI.Sprite(ball_texture);
-    
+
     // app.stage.addChild(ball);
     // let pos_x = 100, pos_y = 100;
     // ball.scale.set(0.1, 0.1);
@@ -421,8 +371,7 @@ function setup(){               //  Main  //
     // speed = 20;
 
 
-
-    function fly_ball_to_point(from_x, from_y, to_x, to_y, speed = 20){
+    function fly_ball_to_point(from_x, from_y, to_x, to_y, speed = 20) {
 
         let delta_x = to_x - from_x,
             delta_y = to_y - from_y,
@@ -434,23 +383,23 @@ function setup(){               //  Main  //
         // delta_y = Math.round(delta_y);
 
         // let n = 0;
-        
+
         // let x_sign = delta_x / Math.round(delta_x),
         //     y_sign = delta_y / Math.round(delta_y);
-            
+
         app.ticker.add(ball_flying_animation);
 
-        function ball_flying_animation(){
+        function ball_flying_animation() {
             // n++;
             // if (n > 200){
             //     debugger;
             // }
             //ball.rotation += 0.02;
             let next_finish = false;
-            if (Math.sqrt((to_x - ball.x)*(to_x - ball.x) + (to_y - ball.y)*(to_y - ball.y)) <= speed){
+            if (Math.sqrt((to_x - ball.x) * (to_x - ball.x) + (to_y - ball.y) * (to_y - ball.y)) <= speed) {
                 next_finish = true;
             }
-            if (next_finish){
+            if (next_finish) {
                 ball.x = to_x;
                 ball.y = to_y;
                 app.ticker.remove(ball_flying_animation);
@@ -465,5 +414,5 @@ function setup(){               //  Main  //
             // }
         }
     }
-    
+
 }
