@@ -1,7 +1,7 @@
 // const { parse } = require("node:path");
 
 const app = new PIXI.Application({
-    width: 2000,
+    width: 3000,
     height: 2000,
     // transparent: true
 });
@@ -15,7 +15,10 @@ PIXI.loader
     .add('files/Grass_02.png')
     .add('files/Grass_03.png')
     .add('files/Grass_04.png')   // загружаю файлы
-    .add('files/castle_test.png')
+    .add('files/castle_test.png') // это, по-хорошему, надо вынести в отдельный файл
+    .add('files/castles/1_CASTLE/big_tower_red.png')
+    .add('files/castles/1_CASTLE/big_tower_grey.png')
+    .add('files/warriors/1_KNIGHT/IDLE.png')
     .load(setup);
 
 
@@ -24,19 +27,31 @@ const GREY = 0x808080;
 const LIGHT_RED = 0xff4040;
 const RED = 0xff0000;
 
+const CURRENT_PLAYER = 0;
+const STAMINA = 5;
+const ARMY_SPEED = 5;
 
-let castles = [];
+
+let castles = [];    
 let armies = [];
 let players = [];
+
+let map = [];       // здесь клетки карты, на которые можно нажимать
+let contents = [];  // здесь всё, что находится на этих клетках
+
+
 
 
 
 
 class Army{
-    constructor(number, player_id, stamina = 5){
-        this.number = number;
+    constructor(player_id, number, stamina, sprite, pos_x, pos_y){
         this.player_id = player_id;
+        this.number = number;
         this.stamina = stamina;
+        this.sprite = sprite;
+        this.pos_x = pos_x;
+        this.pos_y = pos_y;
     }
 }
 
@@ -65,12 +80,6 @@ class Player{
     }
 }
 
-class Coords{
-    contructor(x, y){
-        this.x = x;
-        this.y = y;
-    }
-}
 
 
 
@@ -81,24 +90,26 @@ function setup(){               //  Main  //
     let TGrass_03 = PIXI.Loader.shared.resources['files/Grass_03.png'].texture;
     let TGrass_04 = PIXI.Loader.shared.resources['files/Grass_04.png'].texture;
     let Tcastle_test = PIXI.Loader.shared.resources['files/castle_test.png'].texture;
+    let Tcastle_1_big_red = PIXI.Loader.shared.resources['files/castles/1_CASTLE/big_tower_red.png'].texture;
+    let Tcastle_1_big_grey = PIXI.Loader.shared.resources['files/castles/1_CASTLE/big_tower_grey.png'].texture;
+    let Twarrior_test = PIXI.Loader.shared.resources['files/warriors/1_KNIGHT/IDLE.png'].texture;
 
 
 
     /////   параметры карты   /////
-    const tile_size = 90;
-    let seed = [1, 1, 11, 1, 31, 1]; // первый элемент, на сколько изменяется каждый следующий, каждый n-й элемент, на сколько он изменяется
-    let size_x = 16;
-    let size_y = 8;
+    let tile_size = 100;
+    let seed = [1, 1, 17, 1, 31, 3]; // первый элемент, на сколько изменяется каждый следующий, каждый n-й элемент, на сколько он изменяется
+    let size_x = 25;
+    let size_y = 15;
 
-    // let select_outline = new PIXI.Graphics();  // больше не нужно
-    
-    let map = [];       // здесь клетки карты, на которые можно нажимать
+
     let mapContainer = new PIXI.Container();
+    let castleContainer = new PIXI.Container();
+    
 
-    let contents = [];  // здесь всё, что находится на карте
 
     let left_border, right_border, up_border, down_border;  // здесь должны быть нормальные текстуры
-    left_border = new PIXI.Graphics();
+    left_border = new PIXI.Graphics();                      // здесь создаются границы
     left_border.lineStyle(2, 0xc7cb28);
     left_border.beginFill(0xcbc5f07);
     left_border.drawRect(0, 0, 15, 1080);
@@ -134,7 +145,7 @@ function setup(){               //  Main  //
     let belongs_to = [[0]];                             // n-му игроку принадлежат все города из соответстующего массива
 
     for (let i = 0; i < castle_number; i++){   // создаем замки
-        let cur_castle = new Castle(-1, 0, castle_position[i][0], castle_position[i][1]);
+        let cur_castle = new Castle(-1, 0, castle_position[i][1], castle_position[i][0]);
         castles.push(cur_castle);
     }
 
@@ -144,13 +155,17 @@ function setup(){               //  Main  //
             castles[belongs_to[i][j]].player_id = i;
             cur_player.castles.push(castles[belongs_to[i][j]]);
         }
+        players.push(cur_player);
     }
 
 
 
-    ///////// utils ///////
+
+    ///////// utils /////////////////////////////////////////////////////////////////////////////////////////////////
 
     let pointer_down = false;
+    let castle_selected = null;
+    let army_selected = [-1, -1];
 
 
 
@@ -162,6 +177,8 @@ function setup(){               //  Main  //
     fillMap(castles);
     mapContainer.x += 15;
     mapContainer.y += 15;
+    castleContainer.x += 15;
+    castleContainer.y += 15;
 
     
     app.stage.addChild(left_border);
@@ -240,46 +257,134 @@ function setup(){               //  Main  //
     }
 
 
-    function mouseOverTile(i, j){    // если мышка над клеткой - (клетка обводится бледно-красным) клетка темнеет
-        // console.log(i, j);
-        // select_outline.lineStyle(3, LIGHT_RED);
-        // select_outline.drawRect(tile_size * j, tile_size * i, tile_size, tile_size);
-        // app.stage.addChild(select_outline);
+    function mouseOverTile(i, j){    // если мышка над клеткой - клетка темнеет
         map[i][j].alpha -= 0.25;
     }
 
     function mouseOutOfTile(i, j){
-        // console.log('out of ', i, j);
-        // select_outline.clear();
         map[i][j].alpha += 0.25;
+        pointer_down = false;
     }
 
     function mouseLeftClickTile(i, j){
+        if (pointer_down){
+            console.log(contents[i][j]);
+            console.log(army_selected);
+            if (contents[i][j].army != null && contents[i][j].castle == null){
+                console.log("army here")
+                if (army_selected[0] == -1){
+                    army_selected = [i, j];
+                    contents[i][j].army.sprite.tint = 0xff7777;
+                    // console.log("clicked");
+                }
+                else if (army_selected[0] == i && army_selected[1] == j){
+                    army_selected = [-1, -1];
+                    contents[i][j].army.sprite.tint = 0xffffff;
+                    // console.log("unclicked");
+                }
+            }
+            else if (contents[i][j].army == null && contents[i][j].castle != null){
 
+            }
+            else {
+                if (army_selected[0] != -1){
+
+                    let from_x, from_y, to_x, to_y;
+                    from_x = 15 + army_selected[1] * tile_size + tile_size * 0.5;
+                    from_y = 15 + army_selected[0] * tile_size + tile_size * 0.5;
+                    to_x = 15 + j * tile_size + tile_size * 0.5;
+                    to_y = 15 + i * tile_size + tile_size * 0.5;
+
+                    // moveArmyFromTo(from_x, from_y, to_x, to_y, ARMY_SPEED, contents[army_selected[1]][army_selected[0]]);
+                    contents[i][j].army = contents[army_selected[0]][army_selected[1]].army;
+                    contents[army_selected[0]][army_selected[1]].army = null;
+
+                    contents[i][j].army.sprite.x = 15 + j * tile_size + tile_size * 0.5;
+                    contents[i][j].army.sprite.y = 15 + i * tile_size + tile_size * 0.5;
+
+                    army_selected = [i, j];
+                }
+            }
+            pointer_down = false;
+        }
     }
 
 
 
 
     function fillMap(castles){      // наполняем содержание (пока только замками)
+        app.stage.addChild(castleContainer);
         for (let i = 0; i < castles.length; i++){
             contents[castles[i].pos_x][castles[i].pos_y].castle = castles[i];
             let current_castle;
         
 
-            current_castle = new PIXI.Sprite(Tcastle_test);   // переписать!
+            if (castles[i].player_id == 0){
+                current_castle = new PIXI.Sprite(Tcastle_1_big_red);    // переписать!
+            }
+            else {
+               current_castle = new PIXI.Sprite(Tcastle_1_big_grey);
+            }
             current_castle.anchor.set(0.5);
-            current_castle.scale.set(0.14);
-            current_castle.position.set(castles[i].pos_x * tile_size + tile_size * 0.5, castles[i].pos_y * tile_size + tile_size,)
-            app.stage.addChild(current_castle);
+            current_castle.scale.set(tile_size * 1.5 / 955);
+            current_castle.position.set(castles[i].pos_y * tile_size + tile_size * 0.5, castles[i].pos_x * tile_size)
+            castleContainer.addChild(current_castle);
         }
     }
-    
+
+
+    function createArmy(i, j, number, player_id){     // создаю армию из пока одного солдата
+        let warrior = new PIXI.Sprite(Twarrior_test);
+        warrior.anchor.set(0.5);
+        warrior.scale.set(tile_size / 1000);
+        warrior.position.set(j * tile_size + tile_size * 0.5 + 15, i * tile_size + tile_size * 0.5 + 15);
+        app.stage.addChild(warrior);
+
+        let cur_army = new Army(number, player_id, STAMINA, warrior, i, j);
+        armies.push(cur_army);
+        contents[i][j].army = cur_army;
+    }
+
+
+
+    function moveArmyFromTo(from_x, from_y, to_x, to_y, speed = ARMY_SPEED, sprite){
+        let delta_x = to_x - from_x,
+            delta_y = to_y - from_y,
+            path_length = Math.sqrt(delta_x * delta_x + delta_y * delta_y),
+            dx = (delta_x / path_length) * speed,
+            dy = (delta_y / path_length) * speed;
+
+
+        app.ticker.add(armyMoveAnimation);
+
+        function armyMoveAnimation(){
+            let next_finish = false;
+            if (Math.sqrt((to_x - sprite.x)*(to_x - sprite.x) + (to_y - sprite.y)*(to_y - sprite.y)) <= speed){
+                next_finish = true;
+            }
+            if (next_finish){
+                sprite.x = to_x;
+                sprite.y = to_y;
+                app.ticker.remove(armyMoveAnimation);
+            }
+            sprite.x += dx;
+            sprite.y += dy;
+            // if (ball.x <= ball.width / 2 || ball.x >= app.renderer.width - ball.width / 2){
+            //     dx *= -1;
+            // }
+            // if (ball.y <= ball.height / 2 || ball.y >= app.renderer.height - ball.height / 2){
+            //     dy *= -1;
+            // }
+        }
+    }
+
+
+    createArmy(3, 3, 1, 0);
 
 
     
 
-    
+
 
 
 
@@ -325,13 +430,13 @@ function setup(){               //  Main  //
             dx = (delta_x / path_length) * speed,
             dy = (delta_y / path_length) * speed;
 
-        delta_x = Math.round(delta_x);
-        delta_y = Math.round(delta_y);
+        // delta_x = Math.round(delta_x);
+        // delta_y = Math.round(delta_y);
 
         // let n = 0;
         
-        let x_sign = delta_x / Math.round(delta_x),
-            y_sign = delta_y / Math.round(delta_y);
+        // let x_sign = delta_x / Math.round(delta_x),
+        //     y_sign = delta_y / Math.round(delta_y);
             
         app.ticker.add(ball_flying_animation);
 
