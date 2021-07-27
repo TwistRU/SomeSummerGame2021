@@ -30,6 +30,7 @@ const RED = 0xff0000;
 const CURRENT_PLAYER = 0;
 const STAMINA = 5;
 const ARMY_SPEED = 5;
+const SCALE = 1;
 
 
 let castles = [];    
@@ -97,7 +98,7 @@ function setup(){               //  Main  //
 
 
     /////   параметры карты   /////
-    let tile_size = 100;
+    let tile_size = 100 * SCALE;
     let seed = [1, 1, 17, 1, 31, 3]; // первый элемент, на сколько изменяется каждый следующий, каждый n-й элемент, на сколько он изменяется
     let size_x = 25;
     let size_y = 15;
@@ -268,6 +269,13 @@ function setup(){               //  Main  //
 
     function mouseLeftClickTile(i, j){
         if (pointer_down){
+            if (i == 0 && j == 0){
+                SCALE += 0.1;
+            }
+            else if (i == 0 && j == 0){
+                SCALE -= 0.1;
+            }
+            console.log(i, j);
             console.log(contents[i][j]);
             console.log(army_selected);
             if (contents[i][j].army != null && contents[i][j].castle == null){
@@ -302,7 +310,9 @@ function setup(){               //  Main  //
                     contents[i][j].army.sprite.x = 15 + j * tile_size + tile_size * 0.5;
                     contents[i][j].army.sprite.y = 15 + i * tile_size + tile_size * 0.5;
 
-                    army_selected = [i, j];
+                    army_selected = [-1, -1];
+                    contents[i][j].army.sprite.tint = 0xffffff;
+
                 }
             }
             pointer_down = false;
@@ -380,6 +390,7 @@ function setup(){               //  Main  //
 
 
     createArmy(3, 3, 1, 0);
+    createArmy(4, 5, 10, 2);
 
 
     
