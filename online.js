@@ -91,29 +91,48 @@ export class Online {
      * Отключает игрока от комнаты
      */
     leaveGame() {
-        database.ref('gameRooms/' + this.roomId).transaction((roomData) => {
-            console.log(roomData);
-            if (!roomData)
-                return roomData;
-            if (Object.keys(roomData.users).length - 1 <= 0)
-                roomData = null;
+        database.ref('gameRooms/' + this.roomId).transaction((snapshot) => {
+            if (!snapshot)
+                return snapshot;
+            if (Object.keys(snapshot.users).length - 1 <= 0)
+                snapshot = null;
             else
-                delete roomData.users[this.randomInt];
-            console.log(roomData);
-            return roomData;
+                delete snapshot.users[this.randomInt];
+            return snapshot;
         })
             .then(() => {
                 this.roomId = null;
             })
+        database.ref('gameSessions/' + this.roomId).transaction((snapshot) => {
+            if (!snapshot)
+                return snapshot;
+            if (Object.keys(snapshot.players).length - 1 <= 0)
+                snapshot = null;
+            else
+                delete snapshot.players[this.randomInt];
+            return snapshot;
+        })
+            .then(() => {
+                this.roomId = null;
+            });
     }
 
     startGame() {  // запускает только создатель лобби
         if (!this.host)
             return;
         database.ref('gameRooms/' + this.roomId + '/status').set('run')
-        database.ref('gameSessions/' + this.roomId).set({
-            table: genTable(),
-        })
+        database.ref('gameRooms/' + this.roomId + '/users').get()
+            .then((snapshot) => {
+                this.players = snapshot.val();
+            })
+            .then(() => {
+                let playersId = Object.keys(this.players);
+                database.ref('gameSessions/' + this.roomId).set({
+                    table: genTable(),
+                    players: this.players,
+                    nowTurn: playersId[Math.floor(Math.random() * playersId.length)]
+                })
+            });
     }
 
     startListeningGameInfo() {
@@ -133,10 +152,10 @@ export class Online {
     }
 
     makeMove(newTable) {
-        // let playersId = Object.keys(this.players);
+        let playersId = Object.keys(this.players);
         database.ref('gameSessions/' + this.roomId).update({
-            data: newTable,
-            // nowTurn: this.players[(playersId[this.randomInt] + 1) % playersId.length],
-        })
+            table: newTable,
+            nowTurn: this.players[playersId[(playersId.indexOf(this.randomInt.toString()) + 1) % playersId.length]],
+        });
     }
 }
