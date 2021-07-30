@@ -3,10 +3,6 @@ import {
     firebaseConfig,
 } from "./constants.js";
 
-import {
-    genTable,
-} from "./game-logic.js";
-
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
@@ -149,6 +145,13 @@ export class Online {
             this.nowTurn = data.nowTurn;
             this.players = data.players;
         });
+    }
+
+    getRoomList() {
+        return database.ref('gameRooms').get()
+            .then((snapshot) => {
+                return snapshot.val();
+            });
     }
 
     getTable() {
