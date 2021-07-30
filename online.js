@@ -108,7 +108,7 @@ export class Online {
         })
             .then(() => {
                 this.roomId = null;
-            })
+            });
         database.ref('gameSessions/' + this.roomId).transaction((snapshot) => {
             if (!snapshot)
                 return snapshot;
@@ -121,6 +121,7 @@ export class Online {
             .then(() => {
                 this.roomId = null;
             });
+        console.log(database.ref('gameSessions/' + this.roomId).off('value'));
     }
 
     startGame() {  // запускает только создатель лобби
