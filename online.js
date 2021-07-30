@@ -151,6 +151,10 @@ export class Online {
         return this.table;
     }
 
+    isHost(){
+        return this.host;
+    }
+
     makeMove(newTable) {
         let playersId = Object.keys(this.players);
         database.ref('gameSessions/' + this.roomId).update({
