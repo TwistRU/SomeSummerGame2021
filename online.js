@@ -153,13 +153,6 @@ export class Online {
         });
     }
 
-    getRoomList() {
-        return database.ref('gameRooms').get()
-            .then((snapshot) => {
-                return snapshot.val();
-            });
-    }
-
     getTable() {
         return this.table;
     }
