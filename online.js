@@ -17,13 +17,17 @@ if (location.hostname === "localhost") { // TODO удалить
 }
 
 export class Online {
-    constructor(userName) {
+    constructor(userName=undefined) {
         this.userName = userName;
         this.randomInt = Math.floor(Math.random() * 2 ** 63);
         this.roomId = null;
         this.table = null;
         this.host = null;
         this.nowTurn = null;
+    }
+
+    setName(userName){
+        this.userName = userName;
     }
 
     /**
