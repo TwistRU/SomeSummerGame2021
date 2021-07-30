@@ -7,11 +7,6 @@ import {
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
-if (location.hostname === "localhost") { // TODO удалить
-    // Point to the RTDB emulator running on localhost.
-    database.useEmulator("localhost", 9000);
-}
-
 export class Online {
     constructor(userName=undefined) {
         this.userName = userName;
@@ -54,6 +49,17 @@ export class Online {
             })
             .catch((error) => {
                 console.log(error);
+            });
+    }
+
+    /**
+     * Получить список игровых комнат
+     * Возвращает Promise
+     */
+    getRoomList() {
+        return database.ref('gameRooms').get()
+            .then((snapshot) => {
+                return snapshot.val();
             });
     }
 
