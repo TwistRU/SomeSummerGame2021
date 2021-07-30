@@ -1,3 +1,7 @@
+import {UI} from "./UI.js";
+import {Online} from "./online.js";
+import {Game} from "./Game.js";
+
 export function genTable(numPeoples, size = 16) {
     let arr = [];
     for (let y = 0; y < size; ++y) {  // Создание пустого поля
@@ -15,3 +19,19 @@ export function genTable(numPeoples, size = 16) {
 
     return arr;
 }
+
+function mainGame() {
+    let nickname = "";
+
+    const online = new Online();
+    const ui = new UI(online);
+    ui.enterStartScreen();
+    const app = new PIXI.Application({
+        width: window.innerWidth,
+        height: window.innerHeight,
+        // transparent: true
+    });
+
+}
+
+mainGame();
