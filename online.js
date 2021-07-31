@@ -3,27 +3,22 @@ import {
     firebaseConfig,
 } from "./constants.js";
 
-import {
-    genTable,
-} from "./game-logic.js";
-
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const database = firebase.database();
 
-if (location.hostname === "localhost") { // TODO удалить
-    // Point to the RTDB emulator running on localhost.
-    database.useEmulator("localhost", 9000);
-}
-
 export class Online {
-    constructor(userName) {
+    constructor(userName=undefined) {
         this.userName = userName;
         this.randomInt = Math.floor(Math.random() * 2 ** 63);
         this.roomId = null;
         this.table = null;
         this.host = null;
         this.nowTurn = null;
+    }
+
+    setName(userName){
+        this.userName = userName;
     }
 
     /**
@@ -54,6 +49,17 @@ export class Online {
             })
             .catch((error) => {
                 console.log(error);
+            });
+    }
+
+    /**
+     * Получить список игровых комнат
+     * Возвращает Promise
+     */
+    getRoomList() {
+        return database.ref('gameRooms').get()
+            .then((snapshot) => {
+                return snapshot.val();
             });
     }
 
@@ -102,7 +108,7 @@ export class Online {
         })
             .then(() => {
                 this.roomId = null;
-            })
+            });
         database.ref('gameSessions/' + this.roomId).transaction((snapshot) => {
             if (!snapshot)
                 return snapshot;
@@ -115,6 +121,7 @@ export class Online {
             .then(() => {
                 this.roomId = null;
             });
+        console.log(database.ref('gameSessions/' + this.roomId).off('value'));
     }
 
     startGame() {  // запускает только создатель лобби
@@ -149,6 +156,10 @@ export class Online {
 
     getTable() {
         return this.table;
+    }
+
+    isHost(){
+        return this.host;
     }
 
     makeMove(newTable) {
