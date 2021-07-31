@@ -18,10 +18,10 @@ export const SEED1 = [1, 1, 17, 1, 31, 3]; // первый элемент, на 
 export const POPULATION_GROWTH = 10;
 
 export const COLORS = {
-    RED: 0xff0000,
-    BLUE: 0x0000ff,
-    GREEN: 0x00ff00,
-    YELLOW: 0xfff000,
-    BROWN: 0x964b00,
-    PURPLE: 0x7300ae,
+    "RED": 0xff0000,
+    "BLUE": 0x0000ff,
+    "GREEN": 0x00ff00,
+    "YELLOW": 0xfff000,
+    "BROWN": 0x964b00,
+    "PURPLE": 0x7300ae,
 }

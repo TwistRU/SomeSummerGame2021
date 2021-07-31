@@ -2,8 +2,8 @@
 
 
 const app = new PIXI.Application({
-    width: window.innerWidth,
-    height: window.innerHeight,
+    width: window.innerWidth * 2,
+    height: window.innerHeight * 2,
     // transparent: true
 });
 document.body.appendChild(app.view);
@@ -15,13 +15,24 @@ const tile_size = 100;
 const SEED1 = [1, 1, 17, 1, 31, 3]; // первый элемент, на сколько изменяется каждый следующий, каждый n-й элемент, на сколько он изменяется
 const POPULATION_GROWTH = 10;
 const COLORS = {
-    RED: 0xff0000,
-    BLUE: 0x0000ff,
-    GREEN: 0x00ff00,
-    YELLOW: 0xfff000,
-    BROWN: 0x964b00,
-    PURPLE: 0x7300ae,
+    "RED": 0xff0000,
+    "BLUE": 0x0000ff,
+    "GREEN": 0x00ff00,
+    "YELLOW": 0xfff000,
+    "BROWN": 0x964b00,
+    "PURPLE": 0x7300ae,
 }
+
+const Tints = {
+    "RED": 0xff8888,
+    "BLUE": 0x8888ff,
+    "GREEN": 0x88ff88,
+    "YELLOW": 0xfff666,
+    "GREY": 0x999999,
+}
+
+let size_x = 25;
+let size_y = 15;
 
 // import {
 //         STAMINA,   // не работает !!!11111!!11
@@ -51,6 +62,7 @@ class Castle {
         this.pos_x = pos_x;
         this.pos_y = pos_y;
         this.sprite;
+        this.color;    // нужен, чтобы определять цвета игроков
     }
 }
 
@@ -92,43 +104,9 @@ let Textures = {
 
 
 
-PIXI.loader
-    .add('files/Grass_01.png')
-    .add('files/Grass_02.png')
-    .add('files/Grass_03.png')
-    .add('files/Grass_04.png')   // загружаю файлы
-    .add('files/castle_test.png') // это, по-хорошему, надо вынести в отдельный файл
-    .add('files/castles/1_CASTLE/big_tower_red.png')
-    .add('files/castles/1_CASTLE/big_tower_blue.png')
-    .add('files/castles/1_CASTLE/big_tower_grey.png')
-    .add('files/warriors/1_KNIGHT/IDLE.png')
-    .load(setup.bind(null, Textures))  //.then(this.enterGameScreen.bind(this))
 
 
-function setup(Textures){
-    Textures.TGrass_01 = PIXI.Loader.shared.resources['files/Grass_01.png'].texture;  // создаю текстуры
-    Textures.TGrass_02 = PIXI.Loader.shared.resources['files/Grass_02.png'].texture;
-    Textures.TGrass_03 = PIXI.Loader.shared.resources['files/Grass_03.png'].texture;
-    Textures.TGrass_04 = PIXI.Loader.shared.resources['files/Grass_04.png'].texture;
-    Textures.Tcastle_1_big_red = PIXI.Loader.shared.resources['files/castles/1_CASTLE/big_tower_red.png'].texture;
-    Textures.Tcastle_1_big_blue = PIXI.Loader.shared.resources['files/castles/1_CASTLE/big_tower_blue.png'].texture;
-    Textures.Tcastle_1_big_grey = PIXI.Loader.shared.resources['files/castles/1_CASTLE/big_tower_grey.png'].texture;
-    Textures.Twarrior_test = PIXI.Loader.shared.resources['files/warriors/1_KNIGHT/IDLE.png'].texture;
 
-    Textures.TileTextures = {
-        0: Textures.TGrass_01,
-        1: Textures.TGrass_02,
-        2: Textures.TGrass_03,
-        3: Textures.TGrass_04,
-    }
-
-    Textures.castleTextures = {
-        "RED": Textures.Tcastle_1_big_red,
-        "BLUE": Textures.Tcastle_1_big_blue,
-        "GREY": Textures.Tcastle_1_big_grey,
-    }
-    game1.enterGameScreen();
-}
 
 
 
@@ -139,12 +117,12 @@ class Game{
         this.userName = userName;
         this.gameTable = gameTable;
         this.test_tile;
-        console.log(this.gameTable)   //  []
+        // console.log(this.gameTable)   //  []
         
         this.map = [];       // здесь клетки карты, на которые можно нажимать
         this.castles = [];
         this.armies = [];
-        this.players = [];
+        this.players;
 
         this.mapContainer = new PIXI.Container();
         this.castleContainer = new PIXI.Container();
@@ -153,8 +131,59 @@ class Game{
         this.gameScreenContainer = new PIXI.Container();
         this.GUIContainer = new PIXI.Container();
 
+        this.response;
+        this.pointer_down = false;
+        this.castle_selected = null;
+        this.army_selected = [-1, -1];
+        this.castle_selected = [-1, -1];
+        this.mouseDownLastPos = null;
+
         // this.gameScreenContainer.addChild(this.mapContainer, this.castleContainer, this.armyContainer);
         app.stage.addChild(this.gameScreenContainer, this.GUIContainer);
+
+        PIXI.loader
+            .add('files/Grass_01.png')
+            .add('files/Grass_02.png')
+            .add('files/Grass_03.png')
+            .add('files/Grass_04.png')   // загружаю файлы
+            .add('files/castle_test.png') // это, по-хорошему, надо вынести в отдельный файл
+            .add('files/castles/1_CASTLE/big_tower_red.png')
+            .add('files/castles/1_CASTLE/big_tower_blue.png')
+            .add('files/castles/1_CASTLE/big_tower_grey.png')
+            .add('files/warriors/1_KNIGHT/IDLE.png')
+            .load(setup.bind(null, Textures))  //.then(this.enterGameScreen.bind(this))
+
+
+        function setup(Textures){
+            Textures.TGrass_01 = PIXI.Loader.shared.resources['files/Grass_01.png'].texture;  // создаю текстуры
+            Textures.TGrass_02 = PIXI.Loader.shared.resources['files/Grass_02.png'].texture;
+            Textures.TGrass_03 = PIXI.Loader.shared.resources['files/Grass_03.png'].texture;
+            Textures.TGrass_04 = PIXI.Loader.shared.resources['files/Grass_04.png'].texture;
+            Textures.Tcastle_1_big_red = PIXI.Loader.shared.resources['files/castles/1_CASTLE/big_tower_red.png'].texture;
+            Textures.Tcastle_1_big_blue = PIXI.Loader.shared.resources['files/castles/1_CASTLE/big_tower_blue.png'].texture;
+            Textures.Tcastle_1_big_grey = PIXI.Loader.shared.resources['files/castles/1_CASTLE/big_tower_grey.png'].texture;
+            Textures.Twarrior_test = PIXI.Loader.shared.resources['files/warriors/1_KNIGHT/IDLE.png'].texture;
+
+            Textures.TileTextures = {
+                0: Textures.TGrass_01,
+                1: Textures.TGrass_02,
+                2: Textures.TGrass_03,
+                3: Textures.TGrass_04,
+            }
+
+            Textures.castleTextures = {
+                "RED": Textures.Tcastle_1_big_red,
+                "BLUE": Textures.Tcastle_1_big_blue,
+                "GREY": Textures.Tcastle_1_big_grey,
+            }
+            game1.enterGameScreen();
+
+            game1.createArmy(3, 3, 10, "player1");
+
+            game1.createArmy(5, 7, 20, "player2");
+
+            game1.GameMove();
+        }
         
     }
 
@@ -167,8 +196,7 @@ class Game{
 
 
         
-        let size_x = 25;
-        let size_y = 15;
+
         
         
 
@@ -183,6 +211,7 @@ class Game{
             let cur_castle = new Castle();
             cur_castle.pos_x = castle_position[i][1];
             cur_castle.pos_y = castle_position[i][0];
+            cur_castle.color = "GREY";
             cur_castle.sprite = new PIXI.Sprite(Textures.castleTextures["GREY"]);
             cur_castle.sprite.anchor.set(0.5);
             cur_castle.sprite.scale.set(tile_size * 1.5 / 955);
@@ -198,6 +227,7 @@ class Game{
 
             for (let j = 0; j < belongs_to[i].length; j++) {
                 this.castles[belongs_to[i][j]].player_name = players_nick_color[i][0];
+                this.castles[belongs_to[i][j]].color = players_nick_color[i][1];
                 this.castles[belongs_to[i][j]].sprite = new PIXI.Sprite(Textures.castleTextures[cur_player.color]);
                 this.castles[belongs_to[i][j]].sprite.anchor.set(0.5);
                 this.castles[belongs_to[i][j]].sprite.scale.set(tile_size * 1.5 / 955);
@@ -254,12 +284,13 @@ class Game{
         for (let i = 0; i < size_y; i++) {          // добавляем спрайты в контейнер и привязываем ивентлисенеры
             for (let j = 0; j < size_x; j++) {
                 this.mapContainer.addChild(this.map[i][j]);
-                this.map[i][j].interactive = true;
-                this.map[i][j].on('pointerover', this.mouseOverTile.bind(null, i, j, this.map));
-                this.map[i][j].on('pointerout', this.mouseOutOfTile.bind(null, i, j, this.map));
-                this.map[i][j].on('click', this.mousePointerClick.bind(null, i, j, this.gameTable, this.army_selected));
+                // this.map[i][j].interactive = true;
+                this.map[i][j].on('pointerover', this.mouseOverTile.bind(this, i, j));
+                this.map[i][j].on('pointerout', this.mouseOutOfTile.bind(this, i, j));
+                this.map[i][j].on('click', this.mousePointerClick.bind(this, i, j));
             }
         }
+        this.map[0][0].on('click', this.GameMoveEnd.bind(this));
 
 
         for (let i = 0; i < size_y; i++){
@@ -273,117 +304,230 @@ class Game{
         }
 
         for (let i = 0; i < this.castles.length; i++){   // создаём массив игроков
-            let player_exists = false;
-            for (let j = 0; j < this.players.length; j++){
-                if (this.castles[i].player_name == this.players[i].player_name){
-                    this.players[i].castles.push(this.castles[i]);
-                    player_exists = true;
-                    break;
-                }
+            if (this.players[this.castles[i].player_name]){
+                this.players[this.castles[i].player_name].castles.push(this.castles[i]);
             }
-            if (!player_exists){
+            else {
                 let cur_player = new Player();
                 cur_player.player_name = this.castles[i].player_name;
+                cur_player.color = this.castles[i].color;
                 cur_player.castles.push(this.castles[i]);
+                this.players[cur_player.player_name] = cur_player;
             }
         }
+        // console.log(this.players)
 
         // Подключаем pan zoom
         app.stage.interactive = true;
-        app.stage.mousemove = this.mouseMove.bind(null, this.mouseDownLastPos);
-        app.stage.mousedown = this.mouseDown.bind(null, this.mouseDownLastPos);
-        document.addEventListener('mouseup', this.mouseUp.bind(null, this.mouseDownLastPos));
+        app.stage.mousemove = this.mouseMove.bind(this);
+        app.stage.mousedown = this.mouseDown.bind(this);
+        document.addEventListener('mouseup', this.mouseUp.bind(this));
 
         this.gameScreenContainer.addChild(this.mapContainer);
         this.gameScreenContainer.addChild(this.castleContainer);
+        this.gameScreenContainer.addChild(this.armyContainer);
     }
 
 
-    pointer_down = false;
-    castle_selected = null;
-    army_selected = [-1, -1];
-    mouseDownLastPos = null;
+    
 
-    mouseDown(mouseDownLastPos, e) {
-        mouseDownLastPos = {x: e.data.originalEvent.offsetX, y: e.data.originalEvent.offsetY};
+    mouseDown(e) {
+        this.mouseDownLastPos = {x: e.data.originalEvent.offsetX, y: e.data.originalEvent.offsetY};
     }
 
-    mouseUp(mouseDownLastPos, e) {
-        console.log(mouseDownLastPos);
-        mouseDownLastPos = null;
+    mouseUp(e) {
+        this.mouseDownLastPos = null;
     }
 
-    mouseMove(mouseDownLastPos, e) {
-        if (mouseDownLastPos) {
-            console.log(mouseDownLastPos)
-            app.gameScreenContainer.x = Math.min(0, (Math.max(-app.screen.width, app.stage.x + (e.data.originalEvent.offsetX - mouseDownLastPos.x))));
-            app.gameScreenContainer.y = Math.min(0, (Math.max(-app.screen.height, app.stage.y + (e.data.originalEvent.offsetY - mouseDownLastPos.y))));
-            mouseDownLastPos = {x: e.data.originalEvent.offsetX, y: e.data.originalEvent.offsetY};
+    mouseMove(e) {
+        if (this.mouseDownLastPos) {
+            // console.log(this.mouseDownLastPos)
+            this.gameScreenContainer.x = Math.min(0, (Math.max(-app.screen.width, app.stage.x + (e.data.originalEvent.offsetX - this.mouseDownLastPos.x))));
+            this.gameScreenContainer.y = Math.min(0, (Math.max(-app.screen.height, app.stage.y + (e.data.originalEvent.offsetY - this.mouseDownLastPos.y))));
+            this.mouseDownLastPos = {x: e.data.originalEvent.offsetX, y: e.data.originalEvent.offsetY};
         }
     }
 
-    mouseOverTile(i, j, map) {    // если мышка над клеткой - клетка темнеет
-        map[i][j].alpha -= 0.25;
+    mouseOverTile(i, j) {    // если мышка над клеткой - клетка темнеет
+        this.map[i][j].alpha -= 0.25;
     }
 
-    mouseOutOfTile(i, j, map) {
-        map[i][j].alpha += 0.25;
+    mouseOutOfTile(i, j) {
+        this.map[i][j].alpha += 0.25;
     }
 
 
 
-    mousePointerClick(i, j, gameTable, army_selected) {
-        console.log('click');
-        console.log(gameTable[i][j]);
-        console.log(army_selected);
-        if (gameTable[i][j].army != null && gameTable[i][j].castle == null) {
-            console.log("army here")
-            if (army_selected[0] == -1) {
-                army_selected = [i, j];
-                gameTable[i][j].army.sprite.tint = 0xff7777;
+    mousePointerClick(i, j) {
+        // console.log('click');
+        // console.log(this);
+        console.log(this.gameTable[i][j]);
+        // console.log("army selected", this.army_selected)
+        if (this.gameTable[i][j].army != null && this.castle_selected[0] != i && this.castle_selected[1] != j) {  // && gameTable[i][j].castle == null
+            // console.log("army here")
+            if (this.army_selected[0] == -1) {    // нажимаем на армию
+                this.army_selected = [i, j];
+                this.gameTable[i][j].army.sprite.alpha = 0.7;
                 // console.log("clicked");
-            } else if (army_selected[0] == i && army_selected[1] == j) {
-                army_selected = [-1, -1];
-                gameTable[i][j].army.sprite.tint = 0xffffff;
+            } else if (this.army_selected[0] == i && this.army_selected[1] == j) {
+                this.army_selected = [-1, -1];
+                this.gameTable[i][j].army.sprite.alpha = 1;
                 // console.log("unclicked");
             }
-        } else if (gameTable[i][j].army == null && gameTable[i][j].castle != null) {
+        } else if (this.gameTable[i][j].castle != null) {  // gameTable[i][j].army == null &&  нажимаем на замок
+
+            console.log(this.castle_selected)
+            if (this.castle_selected[0] == -1){   // если замок не выбран
+                this.castle_selected = [i, j];
+                this.gameTable[i][j].castle.sprite.tint = 0x888888;
+            }
+            else if (this.castle_selected[0] == i && this.castle_selected[1] == j){
+                if (this.gameTable[i][j].castle.number === 0){  // если в замке нет войск
+                    this.castle_selected = [-1, -1];
+                    this.gameTable[i][j].castle.sprite.tint = 0xffffff;
+                }
+                else {
+                    if (this.gameTable[i][j].army == null){
+                        let warrior = new PIXI.Sprite(Textures.Twarrior_test);
+                        warrior.anchor.set(0.5);
+                        warrior.scale.set(tile_size / 1000);
+                        warrior.position.set(j * tile_size + tile_size * 0.5, i * tile_size + tile_size * 0.5);
+                        console.log(this.players)
+                        warrior.tint = Tints[this.players[this.player_name].color];
+                        this.armyContainer.addChild(warrior);
+
+                        let cur_army = new Army(0, player_name, STAMINA, warrior, i, j);
+                        this.armies.push(cur_army);
+                        this.gameTable[i][j].army = cur_army;
+                    }
+                    let transfer = Math.ceil(gameTable[i][j].castle.number / 2);
+                    this.gameTable[i][j].castle.number -= transfer;
+                    this.gameTable[i][j].army.number += transfer;
+                }
+            }
 
         } else {
-            if (army_selected[0] != -1) {
+            if (this.army_selected[0] != -1) {
                 
                 let from_x, from_y, to_x, to_y;
-                from_x = army_selected[1] * tile_size + tile_size * 0.5;
-                from_y = army_selected[0] * tile_size + tile_size * 0.5;
+                from_x = this.army_selected[1] * tile_size + tile_size * 0.5;
+                from_y = this.army_selected[0] * tile_size + tile_size * 0.5;
                 to_x = j * tile_size + tile_size * 0.5;
                 to_y = i * tile_size + tile_size * 0.5;
-
+                let army_current = this.army_selected;
+                let cur_stamina = this.gameTable[army_current[0]][army_current[1]].army.stamina;
+                
+                // здесь я писал вслепую
                 // moveArmyFromTo(from_x, from_y, to_x, to_y, ARMY_SPEED, gameTable[army_selected[1]][army_selected[0]]);
-                gameTable[i][j].army = gameTable[army_selected[0]][army_selected[1]].army;
-                gameTable[army_selected[0]][army_selected[1]].army = null;
+                // console.log(this.gameTable[army_current[0]][army_current[1]].army.stamina)
+                // while (cur_stamina > 0 && army_current[0] != i && army_current[1] != j){
+                //     let di = i - army_current[0];
+                //     let dj = j - army_current[1];
+                //     let direction = di / dj;
+                //     if (Math.abs(direction - (di - (di / Math.abs(di)) / dj)) < Math.abs(direction - (di / (dj - Math.abs(dj))))){
+                //         army_current[0]++;
+                //     }
+                //     else {
+                //         army_current[1]++;
+                //     }
+                //     cur_stamina--;
+                // }
 
-                gameTable[i][j].army.sprite.x = j * tile_size + tile_size * 0.5;
-                gameTable[i][j].army.sprite.y = i * tile_size + tile_size * 0.5;
 
-                army_selected = [i, j];
-                army_selected = [-1, -1];
-                gameTable[i][j].army.sprite.tint = 0xffffff;
+                // if (!this.gameTable[army_current[0]][army_current[1]].army){
+                //     if (!this.gameTable[army_current[0]][army_current[1]].castle){
+                //         this.gameTable[army_current[0]][army_current[1]].army = this.gameTable[army_selected[0]][army_selected[1]].army;
+                //         this.gameTable[army_current[0]][army_current[1]].army.sprite.x = j * tile_size + tile_size * 0.5;
+                //         this.gameTable[army_current[0]][army_current[1]].army.sprite.y = i * tile_size + tile_size * 0.5;
+                //     }
+                //     else if (this.gameTable[army_current[0]][army_current[1]].army.player_name == this.player_name){
+                //         this.gameTable[army_current[0]][army_current[1]].castle.number += this.gameTable[army_selected[0]][army_selected[1]].army.number;
+                //     }
+                //     else {
+                //         let army1 = this.gameTable[army_selected[0]][army_selected[1]].army.number;
+                //         let castle2 = this.gameTable[army_current[0]][army_current[1]].castle.number
+                //         thsi.gameTable[army_selected[0]][army_selected[1]].army.number = army1 - castle2;
+                //         thsi.gameTable[army_current[0]][army_current[1]].castle.number = castle2 - army1;
+                //         if (army1 <= 0){
+                //             thsi.gameTable[army_selected[0]][army_selected[1]].army = null;
+                //         }
+                //         if (army2 <= 0){
+                //             this.gameTable[army_current[0]][army_current[1]].castle.player_name = this.player_name;
+                //             this.gameTable[army_current[0]][army_current[1]].castle.number = army1 - castle2;
+                //             this.gameTable[army_current[0]][army_current[1]].castle.sprite = Textures[players[player_name]]
+                //         }
+                //     }
+                    
+                // }
+                // else if (gameTable[army_current[0]][army_current[1]].army.player_name == player_name){
+                //     gameTable[army_current[0]][army_current[1]].army.number += gameTable[army_selected[0]][army_selected[1]].army.number;
+                // }
+                // else {
+                //     let army1 = gameTable[army_selected[0]][army_selected[1]].army.number;
+                //     let army2 = gameTable[army_current[0]][army_current[1]].army.number
+                //     gameTable[army_selected[0]][army_selected[1]].army.number = army1 - army2;
+                //     gameTable[army_current[0]][army_current[1]].army.number = army2 - army1;
+                //     if (army1 <= 0){
+                //         gameTable[army_selected[0]][army_selected[1]].army = null;
+                //     }
+                //     if (army2 <= 0){
+                //         gameTable[army_current[0]][army_current[1]].army = null;
+                //     }
+                // }
+
+                
+
+                this.gameTable[army_current[0]][army_current[1]].army.sprite.alpha = 1;
+
+                // this.gameTable[army_current[0]][army_current[1]].army = this.gameTable[this.army_selected[0]][this.army_selected[1]].army;
+                this.gameTable[i][j].army = this.gameTable[this.army_selected[0]][this.army_selected[1]].army; 
+                this.gameTable[this.army_selected[0]][this.army_selected[1]].army = null;
+
+                // this.gameTable[army_current[0]][army_current[1]].army.sprite.position.set(j * tile_size + tile_size * 0.5, i * tile_size + tile_size * 0.5);
+                this.gameTable[i][j].army.sprite.position.set(j * tile_size + tile_size * 0.5, i * tile_size + tile_size * 0.5);
+                
+                this.army_selected = [-1, -1];
+            }
+            if (this.castle_selected[0] != -1){
+                this.castle_selected = [-1, -1];
+                this.gameTable[i][j].castle.sprite.alpha = 1;
             }
         }
     }
 
+
     createArmy(i, j, number, player_name) {     // создаю армию из пока одного солдата
-        let warrior = new PIXI.Sprite(this.Twarrior_test);
-        warrior.anchor.set(0.5);
+        let warrior = new PIXI.Sprite(Textures.Twarrior_test);  // я хз как эту функцию использовать, тк в там, где она нужна,
+        warrior.anchor.set(0.5);                                // её еще как-то нужно передать
         warrior.scale.set(tile_size / 1000);
         warrior.position.set(j * tile_size + tile_size * 0.5, i * tile_size + tile_size * 0.5);
+        // console.log(this.players)
+        warrior.tint = Tints[this.players[player_name].color];
         this.armyContainer.addChild(warrior);
 
         let cur_army = new Army(number, player_name, STAMINA, warrior, i, j);
         this.armies.push(cur_army);
-        console.log(this.gameTable)
-        console.log(this.gameTable[i][j]);
         this.gameTable[i][j].army = cur_army;
+    }
+
+    GameMove(func){
+        this.response = func;
+        for (let i = 0; i < size_y; i++) {
+            for (let j = 0; j < size_x; j++) {
+                this.map[i][j].interactive = true;
+            }
+        }
+        // alert("Your move!");
+    }
+
+    GameMoveEnd(map, gameTable){
+        for (let i = 0; i < size_y; i++) {
+            for (let j = 0; j < size_x; j++) {
+                map[i][j].interactive = false;
+            }
+        }
+        alert("Your move ended!")
+        // this.response(gameTable);
     }
 
 
@@ -397,8 +541,10 @@ class Game{
 
 
 let game1 = new Game("qwer", [])
-// game1.enterGameScreen();
-console.log(game1)
+
+
+            
+// game1.createArmy(3, 3, 10, "player1");
 
 // let k = 1.5;
 // game1.gameScreenContainer.scale.x *= k;
@@ -406,127 +552,3 @@ console.log(game1)
 
 
 
-game1.createArmy(3, 3, 10, "player1");
-
-
-
-
-
-
-
-
-
-
-// function setup() {               //  Main  //   old
-
-
-
-    function moveArmyFromTo(from_x, from_y, to_x, to_y, speed = ARMY_SPEED, sprite) {
-        let delta_x = to_x - from_x,
-            delta_y = to_y - from_y,
-            path_length = Math.sqrt(delta_x * delta_x + delta_y * delta_y),
-            dx = (delta_x / path_length) * speed,
-            dy = (delta_y / path_length) * speed;
-
-
-        app.ticker.add(armyMoveAnimation);
-
-        function armyMoveAnimation() {
-            let next_finish = false;
-            if (Math.sqrt((to_x - sprite.x) * (to_x - sprite.x) + (to_y - sprite.y) * (to_y - sprite.y)) <= speed) {
-                next_finish = true;
-            }
-            if (next_finish) {
-                sprite.x = to_x;
-                sprite.y = to_y;
-                app.ticker.remove(armyMoveAnimation);
-            }
-            sprite.x += dx;
-            sprite.y += dy;
-            // if (ball.x <= ball.width / 2 || ball.x >= app.renderer.width - ball.width / 2){
-            //     dx *= -1;
-            // }
-            // if (ball.y <= ball.height / 2 || ball.y >= app.renderer.height - ball.height / 2){
-            //     dy *= -1;
-            // }
-        }
-    }
-
-
-
-    
-
-
-
-///////////////////////    Some ball    //////////////////
-
-
-    // let ball_texture = PIXI.Loader.shared.resources['files/ball_2.png'].texture;
-    // let ball_selected_texture = PIXI.Loader.shared.resources['files/ball_2_selected.png'].texture;
-
-    // let ball = new PIXI.Sprite(ball_texture);
-
-    // app.stage.addChild(ball);
-    // let pos_x = 100, pos_y = 100;
-    // ball.scale.set(0.1, 0.1);
-    // ball.position.set(pos_x, pos_y);
-    // ball.anchor.set(0.5);
-
-
-    //fly_ball_to_point(100, 100, 600, 300, 10);
-
-    // let dx = 2, dy = 3;
-
-    // let to_x, to_y, from_x, from_y, speed;
-    // from_x = 100;
-    // from_y = 100;
-    // to_x = 600;
-    // to_y = 200;
-    // speed = 20;
-
-
-    function fly_ball_to_point(from_x, from_y, to_x, to_y, speed = 20) {
-
-        let delta_x = to_x - from_x,
-            delta_y = to_y - from_y,
-            path_length = Math.sqrt(delta_x * delta_x + delta_y * delta_y),
-            dx = (delta_x / path_length) * speed,
-            dy = (delta_y / path_length) * speed;
-
-        // delta_x = Math.round(delta_x);
-        // delta_y = Math.round(delta_y);
-
-        // let n = 0;
-
-        // let x_sign = delta_x / Math.round(delta_x),
-        //     y_sign = delta_y / Math.round(delta_y);
-
-        app.ticker.add(ball_flying_animation);
-
-        function ball_flying_animation() {
-            // n++;
-            // if (n > 200){
-            //     debugger;
-            // }
-            //ball.rotation += 0.02;
-            let next_finish = false;
-            if (Math.sqrt((to_x - ball.x) * (to_x - ball.x) + (to_y - ball.y) * (to_y - ball.y)) <= speed) {
-                next_finish = true;
-            }
-            if (next_finish) {
-                ball.x = to_x;
-                ball.y = to_y;
-                app.ticker.remove(ball_flying_animation);
-            }
-            ball.x += dx;
-            ball.y += dy;
-            // if (ball.x <= ball.width / 2 || ball.x >= app.renderer.width - ball.width / 2){
-            //     dx *= -1;
-            // }
-            // if (ball.y <= ball.height / 2 || ball.y >= app.renderer.height - ball.height / 2){
-            //     dy *= -1;
-            // }
-        }
-    }
-
-// }
