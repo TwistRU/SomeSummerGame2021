@@ -1,9 +1,11 @@
 export class UI {
-    constructor(online) {
+    constructor(online, funcNickname, funcNext) {
         this.divContainerStartScreen = document.createElement('div');
         this.divContainerRoomsListScreen = document.createElement('div');
         this.nickname = "";
         this.online = online;
+        this.nextFunc = funcNext;
+        this.nicknameFunc = funcNickname;
     }
 
     enterStartScreen(nextFunc = undefined) {
@@ -28,12 +30,13 @@ export class UI {
     exitStartScreen() {
         this.nickname = this.userInputName.value;
         this.online.setName(this.nickname);
+        this.nicknameFunc(this.nickname);
         this.divContainerStartScreen.remove();
-        console.log(this.nickname);
+        console.log("Nickname: " + this.nickname);
         this.enterRoomsListScreen()
     }
 
-    enterRoomsListScreen(nextFunc = undefined) {
+    enterRoomsListScreen() {
         this.divContainerRoomsListScreen.style =
             "width: 100%;" +
             "display: flex;" +
@@ -43,8 +46,23 @@ export class UI {
         let leftContainer = document.createElement('div');
         leftContainer.className = 'flexcontainer';
         leftContainer.style = "flex-grow: 2;";
+        let updateRoomListButton = document.createElement('button');
+        updateRoomListButton.textContent = 'Обновить список комнат';
+        updateRoomListButton.onclick = () => {
+            console.log('1312312312312');
+            console.log(this.online)
+            this.online.getRoomList().then((rooms) => {
+                console.log(rooms);
+                this.fillRoomList(rooms);
+            })
+        }
         let leftUpperText = document.createTextNode("Список текущих комнат: ");
         let leftTable = document.createElement('table');
+        leftTable.id = 'roomList';
+        leftTable.insertRow();
+        leftTable.rows[0].insertCell(0).textContent = "RoomID";
+        leftTable.rows[0].insertCell(1).textContent = 'Users';
+        leftTable.rows[0].insertCell(2).textContent = 'Status';
         let rightContainer = document.createElement('div');
         rightContainer.className = 'flexcontainer';
         rightContainer.style = "flex-grow: 1;";
@@ -66,6 +84,7 @@ export class UI {
         // "appending"
         document.body.append(this.divContainerRoomsListScreen);
         this.divContainerRoomsListScreen.append(leftContainer);
+        leftContainer.append(updateRoomListButton);
         leftContainer.append(leftUpperText);
         leftContainer.append(leftTable);
         this.divContainerRoomsListScreen.append(rightContainer);
@@ -74,32 +93,95 @@ export class UI {
         rightContainer.append(enterButton);
         rightContainer.append(rightMiddleText);
         rightContainer.append(createButton);
-        // filling
-        this.online.getRoomList().then((rooms)=>{
-            leftTable.insertRow();
-            leftTable.rows[0].insertCell(0).textContent = "RoomID";
-            leftTable.rows[0].insertCell(1).textContent = 'Users';
-            leftTable.rows[0].insertCell(2).textContent = 'Status';
-            let i = 1;
-            for (const room in rooms) {
-                leftTable.insertRow();
-                leftTable.rows[i].insertCell(0).textContent = room;
-                leftTable.rows[i].insertCell(1);
-                for (const user in rooms[room].users) {
-                    leftTable.rows[i].cells.item(1).append(rooms[room].users[user]+" ");
-                }
-                leftTable.rows[i].insertCell(2).textContent = rooms[room].status;
-                i++;
-            }
-        });
+    }
 
+    fillRoomList(rooms) {
+        let leftTable = document.getElementById('roomList');
+        console.log('filling table');
+        for (let i = 0; i < leftTable.rows.length - 1; i++) {
+            leftTable.deleteRow(1);
+        }
+        let i = 1;
+        for (const room in rooms) {
+            leftTable.insertRow();
+            leftTable.rows[i].insertCell(0).textContent = room;
+            leftTable.rows[i].insertCell(1);
+            for (const user in rooms[room].users) {
+                leftTable.rows[i].cells.item(1).append(rooms[room].users[user] + " ");
+            }
+            leftTable.rows[i].insertCell(2).textContent = rooms[room].status;
+            i++;
+        }
+    }
+
+    setTimeTextToUpperRight(sometext) {
+        let text = document.createElement('p');
+        text.textContent = sometext;
+        this.divContainerRoomsListScreen.children.item(1).prepend(text);
+        setTimeout(() => {
+            text.remove()
+        }, 5000);
     }
 
     connectToRoom(roomId) {
-        let result = this.online.joinGame(roomId);
+        console.log(this.online);
+        this.roomId = roomId;
+        this.online.joinGame(roomId).then((res) => {
+            switch (res) {
+                case null:
+                    this.setTimeTextToUpperRight('Комнаты не существует');
+                    break;
+                case false:
+                    this.setTimeTextToUpperRight('Комната переполнена');
+                    break;
+                case true:
+                    this.setTimeTextToUpperRight('Будет выполнен переход в игровую комнату');
+                    setTimeout(this.exitRoomsListScreen.bind(this), 6000)
+                    break;
+                default:
+                    this.setTimeTextToUpperRight('Произошла ошибка. Попробуйте ещё раз');
+            }
+        });
     }
 
     exitRoomsListScreen() {
         this.divContainerRoomsListScreen.remove();
+        this.enterRoomScreen();
+    }
+
+    enterRoomScreen() {
+        // setup
+        this.divContainerRoomScreen = document.createElement('div');
+        this.divContainerRoomScreen.className = 'flexcontainer';
+        let text_update_Container = document.createElement('div');
+        text_update_Container.style =
+            "display: flex;" +
+            "flex-direction: row;" +
+            "flew-wrap: nowrap";
+        let upperText = document.createElement('p');
+        upperText.textContent = 'Информация о комнате - ';
+        let updateButton = document.createElement('button');
+        updateButton.textContent = 'Обновить';
+        updateButton.onclick = this.fillRoom.bind(this);
+        // "appending"
+        document.body.append(this.divContainerRoomScreen);
+        this.divContainerRoomScreen.append(text_update_Container);
+        text_update_Container.append(upperText);
+        text_update_Container.append(updateButton);
+
+    }
+
+    fillRoom(roomInfo) {
+        this.clearRoom();
+        // setup
+        let roomInfoContainer = document.createElement('div');
+
+        roomInfoContainer.id = "roominfo";
+        // "appending"
+        this.divContainerRoomScreen.append(roomInfoContainer);
+    }
+
+    clearRoom() {
+        document.getElementById('roominfo').remove();
     }
 }
