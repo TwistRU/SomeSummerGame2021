@@ -177,7 +177,7 @@ export class UI {
                     this.fillRoom(rooms[this.roomId]);
                 }
             )
-        };
+        }
         let roomInfo = document.createElement('div');
         roomInfo.id = 'roominfo';
         let leaveButton = document.createElement('button');
@@ -195,7 +195,18 @@ export class UI {
         text_update_Container.append(updateButton);
         this.divContainerRoomScreen.append(roomInfo);
         this.divContainerRoomScreen.append(leaveButton);
-
+        if(this.online.isHost()){
+            let hostText = document.createElement('p');
+            hostText.textContent = 'Вы хост';
+            let startGameButton = document.createElement('button');
+            startGameButton.textContent = 'Начать игру'
+            startGameButton.onclick = ()=>{
+                this.exitRoomScreen();
+                this.nextFunc();
+            }
+            this.divContainerRoomScreen.append(hostText);
+            this.divContainerRoomScreen.append(startGameButton);
+        }
     }
 
     fillRoom(roomInfo) {
