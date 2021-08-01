@@ -168,7 +168,7 @@ export class UI {
             "flex-direction: row;" +
             "flew-wrap: nowrap";
         let upperText = document.createElement('p');
-        upperText.textContent = 'Информация о комнате - ';
+        upperText.textContent = 'Информация о комнате №' + this.roomId.toString() + ' - ';
         let updateButton = document.createElement('button');
         updateButton.textContent = 'Обновить';
         updateButton.onclick = () => {
