@@ -77,7 +77,7 @@ export class UI {
         let createButton = document.createElement('button');
         createButton.textContent = 'Создать комнату';
         createButton.onclick = () => {
-            this.online.createGame().then(()=>{
+            this.online.createGame().then(() => {
                 this.roomId = this.online.roomId;
                 this.exitRoomsListScreen();
                 this.enterRoomScreen();
@@ -195,12 +195,12 @@ export class UI {
         text_update_Container.append(updateButton);
         this.divContainerRoomScreen.append(roomInfo);
         this.divContainerRoomScreen.append(leaveButton);
-        if(this.online.isHost()){
+        if (this.online.isHost()) {
             let hostText = document.createElement('p');
             hostText.textContent = 'Вы хост';
             let startGameButton = document.createElement('button');
             startGameButton.textContent = 'Начать игру'
-            startGameButton.onclick = ()=>{
+            startGameButton.onclick = () => {
                 this.exitRoomScreen();
                 this.nextFunc();
             }
@@ -208,6 +208,7 @@ export class UI {
             this.divContainerRoomScreen.append(startGameButton);
         }
     }
+
 
     fillRoom(roomInfo) {
         document.getElementById('roominfo').remove();
@@ -231,6 +232,15 @@ export class UI {
             let text = document.createElement('p');
             text.textContent = 'Игрок ' + roomInfo.users[user];
             roomInfoContainer.append(text);
+        }
+        if (roomInfo.status === 'run'){
+            let joinGameSessionButton = document.createElement('button');
+            joinGameSessionButton.textContent = 'Войти в игру';
+            joinGameSessionButton.onclick = () => {
+                this.exitRoomScreen();
+                this.nextFunc();
+            };
+            roomInfoContainer.append(joinGameSessionButton);
         }
     }
 
