@@ -282,7 +282,8 @@ export class Game {
         // создание карты
         if (this.online.isHost){
             this.generateGameTable();
-            this.online.startGame(gameTable);
+            console.log(this.gameTable)
+            this.online.startGame(this.gameTable);
             this.online.startListeningGameInfo();
         }
         else {
