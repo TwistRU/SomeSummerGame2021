@@ -61,9 +61,7 @@ import {
         Textures
 } from "./constants.js";
 
-import {
-    Online
-} from "./online.js"
+
 
 class Army {
     constructor(player_name, number, stamina, sprite, pos_x, pos_y) {
@@ -185,7 +183,7 @@ export class Game {
     generateGameTable(){
         this.gameTable = [];
         let castle_position = [[1, 1], [2, 6], [8, 3]];
-        let belongs_to = [[0], [1]];                    // n-му игроку принадлежат все города из соответстующего массива
+        let belongs_to = [[0]];                    // n-му игроку принадлежат все города из соответстующего массива
         let players_nick_color = [[this.userName, "RED"]]
 
         for (let i = 0; i < castle_position.length; i++) {   // создаем ничейные замки
@@ -203,6 +201,7 @@ export class Game {
 
         for (let i = 0; i < belongs_to.length; i++) {      // создаем игроков и присваеваем им замки, замкам - цвета и текстуры
             let cur_player = new Player();
+            console.log(cur_player, players_nick_color)
             cur_player.player_name = players_nick_color[i][0];
             cur_player.color = players_nick_color[i][1];
 
@@ -281,8 +280,10 @@ export class Game {
 
 
         // создание карты
-        if (Online.isHost){
+        if (this.online.isHost){
             this.generateGameTable();
+            this.online.startGame(gameTable);
+            this.online.startListeningGameInfo();
         }
         else {
             this.gameTable = Online.getTable();
@@ -353,6 +354,7 @@ export class Game {
         this.gameScreenContainer.addChild(this.mapContainer);
         this.gameScreenContainer.addChild(this.castleContainer);
         this.gameScreenContainer.addChild(this.armyContainer);
+
 
     }
 
