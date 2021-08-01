@@ -136,7 +136,10 @@ export class UI {
                     break;
                 case true:
                     this.setTimeTextToUpperRight('Будет выполнен переход в игровую комнату');
-                    setTimeout(this.exitRoomsListScreen.bind(this), 1000)
+                    setTimeout(()=>{
+                        this.exitRoomsListScreen();
+                        this.enterRoomScreen();
+                    }, 1000);
                     break;
                 default:
                     this.setTimeTextToUpperRight('Произошла ошибка. Попробуйте ещё раз');
@@ -146,11 +149,6 @@ export class UI {
 
     exitRoomsListScreen() {
         this.divContainerRoomsListScreen.remove();
-        this.enterRoomScreen();
-    }
-
-    enterRoomsListScreenAgain(){
-        document.body.append(this.divContainerRoomsListScreen);
     }
 
     enterRoomScreen() {
@@ -180,7 +178,7 @@ export class UI {
         leaveButton.onclick = ()=>{
             this.online.leaveGame();
             this.exitRoomScreen();
-            this.enterRoomsListScreenAgain();
+            this.enterRoomsListScreen();
         }
         // "appending"
         document.body.append(this.divContainerRoomScreen);
