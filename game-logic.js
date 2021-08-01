@@ -21,17 +21,10 @@ export function genTable(numPeoples, size = 16) {
 }
 
 function mainGame() {
-    let nickname = "";
-
     const online = new Online();
-    const ui = new UI(online);
+    const game = new Game(online)
+    const ui = new UI(online, game.setUserName.bind(game), game.enterGameScreen.bind(game));
     ui.enterStartScreen();
-    const app = new PIXI.Application({
-        width: window.innerWidth,
-        height: window.innerHeight,
-        // transparent: true
-    });
-
 }
 
 mainGame();
