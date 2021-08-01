@@ -98,18 +98,18 @@ export class UI {
     fillRoomList(rooms) {
         let leftTable = document.getElementById('roomList');
         console.log('filling table');
-        for (let i = 0; i < leftTable.rows.length - 1; i++) {
+        for (let i = 0; leftTable.rows.length !== 1; i++) {
             leftTable.deleteRow(1);
         }
         let i = 1;
         for (const room in rooms) {
-            leftTable.insertRow();
+            leftTable.insertRow(-1);
             leftTable.rows[i].insertCell(0).textContent = room;
             leftTable.rows[i].insertCell(1);
             for (const user in rooms[room].users) {
                 leftTable.rows[i].cells.item(1).append(rooms[room].users[user] + " ");
             }
-            leftTable.rows[i].insertCell(2).textContent = rooms[room].status;
+            leftTable.rows[i].insertCell(-1).textContent = rooms[room].status;
             i++;
         }
     }
@@ -120,7 +120,7 @@ export class UI {
         this.divContainerRoomsListScreen.children.item(1).prepend(text);
         setTimeout(() => {
             text.remove()
-        }, 5000);
+        }, 1000);
     }
 
     connectToRoom(roomId) {
@@ -136,7 +136,7 @@ export class UI {
                     break;
                 case true:
                     this.setTimeTextToUpperRight('Будет выполнен переход в игровую комнату');
-                    setTimeout(this.exitRoomsListScreen.bind(this), 6000)
+                    setTimeout(this.exitRoomsListScreen.bind(this), 1000)
                     break;
                 default:
                     this.setTimeTextToUpperRight('Произошла ошибка. Попробуйте ещё раз');
@@ -147,6 +147,10 @@ export class UI {
     exitRoomsListScreen() {
         this.divContainerRoomsListScreen.remove();
         this.enterRoomScreen();
+    }
+
+    enterRoomsListScreenAgain(){
+        document.body.append(this.divContainerRoomsListScreen);
     }
 
     enterRoomScreen() {
@@ -162,26 +166,58 @@ export class UI {
         upperText.textContent = 'Информация о комнате - ';
         let updateButton = document.createElement('button');
         updateButton.textContent = 'Обновить';
-        updateButton.onclick = this.fillRoom.bind(this);
+        updateButton.onclick = () => {
+            this.online.getRoomList().then((rooms) => {
+                    this.fillRoom(rooms[this.roomId]);
+                }
+            )
+        };
+        let roomInfo = document.createElement('div');
+        roomInfo.id = 'roominfo';
+        let leaveButton = document.createElement('button');
+        leaveButton.id = 'leaveButton';
+        leaveButton.textContent = 'Выйти из комнаты';
+        leaveButton.onclick = ()=>{
+            this.online.leaveGame();
+            this.exitRoomScreen();
+            this.enterRoomsListScreenAgain();
+        }
         // "appending"
         document.body.append(this.divContainerRoomScreen);
         this.divContainerRoomScreen.append(text_update_Container);
         text_update_Container.append(upperText);
         text_update_Container.append(updateButton);
+        this.divContainerRoomScreen.append(roomInfo);
+        this.divContainerRoomScreen.append(leaveButton);
 
     }
 
     fillRoom(roomInfo) {
-        this.clearRoom();
+        document.getElementById('roominfo').remove();
         // setup
         let roomInfoContainer = document.createElement('div');
-
+        roomInfoContainer.style =
+            "display: flex;" +
+            "flex-direction: column;" +
+            "flex-wrap: nowrap";
         roomInfoContainer.id = "roominfo";
         // "appending"
-        this.divContainerRoomScreen.append(roomInfoContainer);
+        this.divContainerRoomScreen.insertBefore(
+            roomInfoContainer,
+            this.divContainerRoomScreen.children.namedItem('leaveButton')
+        );
+        // filling
+        let text = document.createElement('p');
+        text.textContent = 'Игроки в комнате:';
+        roomInfoContainer.append(text);
+        for (const user in roomInfo.users) {
+            let text = document.createElement('p');
+            text.textContent = 'Игрок ' + roomInfo.users[user];
+            roomInfoContainer.append(text);
+        }
     }
 
-    clearRoom() {
-        document.getElementById('roominfo').remove();
+    exitRoomScreen(){
+        this.divContainerRoomScreen.remove()
     }
 }
