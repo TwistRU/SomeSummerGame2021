@@ -124,7 +124,7 @@ export class Online {
         console.log(database.ref('gameSessions/' + this.roomId).off('value'));
     }
 
-    startGame() {  // запускает только создатель лобби
+    startGame(startGameTable) {  // запускает только создатель лобби
         if (!this.host)
             return;
         database.ref('gameRooms/' + this.roomId + '/status').set('run')
@@ -135,7 +135,7 @@ export class Online {
             .then(() => {
                 let playersId = Object.keys(this.players);
                 database.ref('gameSessions/' + this.roomId).set({
-                    table: genTable(),
+                    table: startGameTable,
                     players: this.players,
                     nowTurn: playersId[Math.floor(Math.random() * playersId.length)]
                 })
