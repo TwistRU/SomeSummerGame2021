@@ -23,4 +23,9 @@ export function genTable(numPeoples, size = 16) {
 const online = new Online();
 const game = new Game(online)
 const ui = new UI(online, game.setUserName.bind(game), game.enterGameScreen.bind(game));
+
+window.addEventListener("onunload", () => {
+    online.leaveGame();
+})
+
 ui.enterStartScreen();
