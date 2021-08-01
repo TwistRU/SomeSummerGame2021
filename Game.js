@@ -8,40 +8,62 @@ const app = new PIXI.Application({
 });
 
 
-const STAMINA = 5;
-const ARMY_SPEED = 5;
-const tile_size = 100;
-const SEED1 = [1, 1, 17, 1, 31, 3]; // первый элемент, на сколько изменяется каждый следующий, каждый n-й элемент, на сколько он изменяется
-const POPULATION_GROWTH = 10;
-const COLORS = {
-    "RED": 0xff0000,
-    "BLUE": 0x0000ff,
-    "GREEN": 0x00ff00,
-    "YELLOW": 0xfff000,
-    "BROWN": 0x964b00,
-    "PURPLE": 0x7300ae,
-}
+// const STAMINA = 5;
+// const ARMY_SPEED = 5;
+// const tile_size = 100;
+// const SEED1 = [1, 1, 17, 1, 31, 3]; // первый элемент, на сколько изменяется каждый следующий, каждый n-й элемент, на сколько он изменяется
+// const POPULATION_GROWTH = 10;
+// const COLORS = {
+//     "RED": 0xff0000,
+//     "BLUE": 0x0000ff,
+//     "GREEN": 0x00ff00,
+//     "YELLOW": 0xfff000,
+//     "BROWN": 0x964b00,
+//     "PURPLE": 0x7300ae,
+// }
 
-const Tints = {
-    "RED": 0xff8888,
-    "BLUE": 0x8888ff,
-    "GREEN": 0x88ff88,
-    "YELLOW": 0xfff666,
-    "GREY": 0x999999,
-}
+// const Tints = {
+//     "RED": 0xff8888,
+//     "BLUE": 0x8888ff,
+//     "GREEN": 0x88ff88,
+//     "YELLOW": 0xfff666,
+//     "GREY": 0x999999,
+// }
 
-let size_x = 25;
-let size_y = 15;
+// const size_x = 25;
+// const size_y = 15;
 
-// import {
-//         STAMINA,   // не работает !!!11111!!11
-//         ARMY_SPEED,
-//         tile_size,
-//         SEED1,
-//         COLORS,
-//         POPULATION_GROWTH
-// } from "./constants.js";
+// const Textures = {
+//     TGrass_01: null,
+//     TGrass_02: null,
+//     TGrass_03: null,
+//     TGrass_04: null,
+//     Tcastle_1_big_red: null,
+//     Tcastle_1_big_blue: null,
+//     Tcastle_1_big_green: null,
+//     Tcastle_1_big_yellow: null,
+//     Tcastle_1_big_grey: null,
+//     Twarrior_test: null,
+//     TileTextures: null,
+//     castleTextures: null,
+// }
 
+import {
+        STAMINA,   // не работает !!!11111!!11
+        ARMY_SPEED,
+        tile_size,
+        SEED1,
+        POPULATION_GROWTH,
+        COLORS,
+        Tints,
+        size_x,
+        size_y,
+        Textures
+} from "./constants.js";
+
+import {
+    Online
+} from "./online.js"
 
 class Army {
     constructor(player_name, number, stamina, sprite, pos_x, pos_y) {
@@ -83,20 +105,7 @@ class Player {
 }
 
 
-let Textures = {
-    TGrass_01: null,
-    TGrass_02: null,
-    TGrass_03: null,
-    TGrass_04: null,
-    Tcastle_1_big_red: null,
-    Tcastle_1_big_blue: null,
-    Tcastle_1_big_green: null,
-    Tcastle_1_big_yellow: null,
-    Tcastle_1_big_grey: null,
-    Twarrior_test: null,
-    TileTextures: null,
-    castleTextures: null,
-}
+
 
 
 export class Game {
@@ -128,42 +137,43 @@ export class Game {
         // this.gameScreenContainer.addChild(this.mapContainer, this.castleContainer, this.armyContainer);
         app.stage.addChild(this.gameScreenContainer, this.GUIContainer);
 
-        PIXI.loader
-            .add('files/Grass_01.png')
-            .add('files/Grass_02.png')
-            .add('files/Grass_03.png')
-            .add('files/Grass_04.png')   // загружаю файлы
-            .add('files/castle_test.png') // это, по-хорошему, надо вынести в отдельный файл
-            .add('files/castles/1_CASTLE/big_tower_red.png')
-            .add('files/castles/1_CASTLE/big_tower_blue.png')
-            .add('files/castles/1_CASTLE/big_tower_grey.png')
-            .add('files/warriors/1_KNIGHT/IDLE.png')
-            .load(setup.bind(null, Textures))  //.then(this.enterGameScreen.bind(this))
+        // PIXI.loader
+        //     .add('files/Grass_01.png')
+        //     .add('files/Grass_02.png')
+        //     .add('files/Grass_03.png')
+        //     .add('files/Grass_04.png')   // загружаю файлы
+        //     .add('files/castle_test.png') // это, по-хорошему, надо вынести в отдельный файл
+        //     .add('files/castles/1_CASTLE/big_tower_red.png')
+        //     .add('files/castles/1_CASTLE/big_tower_blue.png')
+        //     .add('files/castles/1_CASTLE/big_tower_grey.png')
+        //     .add('files/warriors/1_KNIGHT/IDLE.png')
+        //     .load(setup.bind(null, Textures))  //.then(this.enterGameScreen.bind(this))
 
 
-        function setup(Textures) {
-            Textures.TGrass_01 = PIXI.Loader.shared.resources['files/Grass_01.png'].texture;  // создаю текстуры
-            Textures.TGrass_02 = PIXI.Loader.shared.resources['files/Grass_02.png'].texture;
-            Textures.TGrass_03 = PIXI.Loader.shared.resources['files/Grass_03.png'].texture;
-            Textures.TGrass_04 = PIXI.Loader.shared.resources['files/Grass_04.png'].texture;
-            Textures.Tcastle_1_big_red = PIXI.Loader.shared.resources['files/castles/1_CASTLE/big_tower_red.png'].texture;
-            Textures.Tcastle_1_big_blue = PIXI.Loader.shared.resources['files/castles/1_CASTLE/big_tower_blue.png'].texture;
-            Textures.Tcastle_1_big_grey = PIXI.Loader.shared.resources['files/castles/1_CASTLE/big_tower_grey.png'].texture;
-            Textures.Twarrior_test = PIXI.Loader.shared.resources['files/warriors/1_KNIGHT/IDLE.png'].texture;
+        // function setup(Textures) {
+        //     console.log("texts")
+        //     Textures.TGrass_01 = PIXI.Loader.shared.resources['files/Grass_01.png'].texture;  // создаю текстуры
+        //     Textures.TGrass_02 = PIXI.Loader.shared.resources['files/Grass_02.png'].texture;
+        //     Textures.TGrass_03 = PIXI.Loader.shared.resources['files/Grass_03.png'].texture;
+        //     Textures.TGrass_04 = PIXI.Loader.shared.resources['files/Grass_04.png'].texture;
+        //     Textures.Tcastle_1_big_red = PIXI.Loader.shared.resources['files/castles/1_CASTLE/big_tower_red.png'].texture;
+        //     Textures.Tcastle_1_big_blue = PIXI.Loader.shared.resources['files/castles/1_CASTLE/big_tower_blue.png'].texture;
+        //     Textures.Tcastle_1_big_grey = PIXI.Loader.shared.resources['files/castles/1_CASTLE/big_tower_grey.png'].texture;
+        //     Textures.Twarrior_test = PIXI.Loader.shared.resources['files/warriors/1_KNIGHT/IDLE.png'].texture;
 
-            Textures.TileTextures = {
-                0: Textures.TGrass_01,
-                1: Textures.TGrass_02,
-                2: Textures.TGrass_03,
-                3: Textures.TGrass_04,
-            }
+        //     Textures.TileTextures = {
+        //         0: Textures.TGrass_01,
+        //         1: Textures.TGrass_02,
+        //         2: Textures.TGrass_03,
+        //         3: Textures.TGrass_04,
+        //     }
 
-            Textures.castleTextures = {
-                "RED": Textures.Tcastle_1_big_red,
-                "BLUE": Textures.Tcastle_1_big_blue,
-                "GREY": Textures.Tcastle_1_big_grey,
-            }
-        }
+        //     Textures.castleTextures = {
+        //         "RED": Textures.Tcastle_1_big_red,
+        //         "BLUE": Textures.Tcastle_1_big_blue,
+        //         "GREY": Textures.Tcastle_1_big_grey,
+        //     }
+        // }
 
     }
 
@@ -171,17 +181,11 @@ export class Game {
         this.userName = name;
     }
 
-
-    enterGameScreen() {
-        document.body.appendChild(app.view);
-        // console.log(Textures.TGrass_01)
-
-
-        ///////  это будет генериться не здесь
-
+    generateGameTable(){
+        this.gameTable = [];
         let castle_position = [[1, 1], [2, 6], [8, 3]];
         let belongs_to = [[0], [1]];                    // n-му игроку принадлежат все города из соответстующего массива
-        let players_nick_color = [["player1", "RED"], ["player2", "BLUE"]]
+        let players_nick_color = [[this.userName, "RED"]]
 
         for (let i = 0; i < castle_position.length; i++) {   // создаем ничейные замки
             let cur_castle = new Castle();
@@ -198,7 +202,7 @@ export class Game {
 
         for (let i = 0; i < belongs_to.length; i++) {      // создаем игроков и присваеваем им замки, замкам - цвета и текстуры
             let cur_player = new Player();
-            cur_player.userName = players_nick_color[i][0];
+            cur_player.player_name = players_nick_color[i][0];
             cur_player.color = players_nick_color[i][1];
 
             for (let j = 0; j < belongs_to[i].length; j++) {
@@ -226,12 +230,62 @@ export class Game {
         this.castles = [];
         this.players = [];
         // console.log(this.gameTable);
+    }
+
+    
 
 
-        //////////////////////  это генерилось не здесь
+    enterGameScreen() {
+        PIXI.loader
+            .add('files/Grass_01.png')
+            .add('files/Grass_02.png')
+            .add('files/Grass_03.png')
+            .add('files/Grass_04.png')   // загружаю файлы
+            .add('files/castle_test.png') // это, по-хорошему, надо вынести в отдельный файл
+            .add('files/castles/1_CASTLE/big_tower_red.png')
+            .add('files/castles/1_CASTLE/big_tower_blue.png')
+            .add('files/castles/1_CASTLE/big_tower_grey.png')
+            .add('files/warriors/1_KNIGHT/IDLE.png')
+            .load(this.setup.bind(this))  //.then(this.enterGameScreen.bind(this))
+    }
+
+
+
+    setup() {
+        console.log("texts")
+        Textures.TGrass_01 = PIXI.Loader.shared.resources['files/Grass_01.png'].texture;  // создаю текстуры
+        Textures.TGrass_02 = PIXI.Loader.shared.resources['files/Grass_02.png'].texture;
+        Textures.TGrass_03 = PIXI.Loader.shared.resources['files/Grass_03.png'].texture;
+        Textures.TGrass_04 = PIXI.Loader.shared.resources['files/Grass_04.png'].texture;
+        Textures.Tcastle_1_big_red = PIXI.Loader.shared.resources['files/castles/1_CASTLE/big_tower_red.png'].texture;
+        Textures.Tcastle_1_big_blue = PIXI.Loader.shared.resources['files/castles/1_CASTLE/big_tower_blue.png'].texture;
+        Textures.Tcastle_1_big_grey = PIXI.Loader.shared.resources['files/castles/1_CASTLE/big_tower_grey.png'].texture;
+        Textures.Twarrior_test = PIXI.Loader.shared.resources['files/warriors/1_KNIGHT/IDLE.png'].texture;
+
+        Textures.TileTextures = {
+            0: Textures.TGrass_01,
+            1: Textures.TGrass_02,
+            2: Textures.TGrass_03,
+            3: Textures.TGrass_04,
+        }
+
+        Textures.castleTextures = {
+            "RED": Textures.Tcastle_1_big_red,
+            "BLUE": Textures.Tcastle_1_big_blue,
+            "GREY": Textures.Tcastle_1_big_grey,
+        }
+
+        document.body.appendChild(app.view);
+        // console.log(Textures.TGrass_01)
 
 
         // создание карты
+        if (Online.isHost){
+            this.generateGameTable();
+        }
+        else {
+            this.gameTable = Online.getTable();
+        }
 
 
         let current_tile_number = SEED1[0];
@@ -298,8 +352,8 @@ export class Game {
         this.gameScreenContainer.addChild(this.mapContainer);
         this.gameScreenContainer.addChild(this.castleContainer);
         this.gameScreenContainer.addChild(this.armyContainer);
-    }
 
+    }
 
     mouseDown(e) {
         this.mouseDownLastPos = {x: e.data.originalEvent.offsetX, y: e.data.originalEvent.offsetY};
@@ -376,6 +430,7 @@ export class Game {
 
 
     createArmy(i, j, number, player_name) {     // создаю армию из пока одного солдата
+        console.log(this)
         let warrior = new PIXI.Sprite(Textures.Twarrior_test);
         warrior.anchor.set(0.5);
         warrior.scale.set(tile_size / 1000);
