@@ -1,5 +1,6 @@
 export class UI {
     constructor(online, funcNickname, funcNext) {
+        console.log(123123123123)
         this.divContainerStartScreen = document.createElement('div');
         this.divContainerRoomsListScreen = document.createElement('div');
         this.nickname = "";
@@ -34,6 +35,9 @@ export class UI {
         this.divContainerStartScreen.remove();
         console.log("Nickname: " + this.nickname);
         this.enterRoomsListScreen()
+    }
+    enterRoomsListScreenAgain(){
+        document.body.append(this.divContainerRoomsListScreen);
     }
 
     enterRoomsListScreen() {
@@ -178,7 +182,7 @@ export class UI {
         leaveButton.onclick = ()=>{
             this.online.leaveGame();
             this.exitRoomScreen();
-            this.enterRoomsListScreen();
+            this.enterRoomsListScreenAgain();
         }
         // "appending"
         document.body.append(this.divContainerRoomScreen);
