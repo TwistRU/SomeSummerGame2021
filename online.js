@@ -26,7 +26,7 @@ export class Online {
      */
     createGame() {
         this.host = true;
-        database.ref('gameRooms').get()
+        return database.ref('gameRooms').get()
             .then((snapshot) => {
                 let data = {};
                 if (snapshot.exists()) {
