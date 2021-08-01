@@ -20,11 +20,7 @@ export function genTable(numPeoples, size = 16) {
     return arr;
 }
 
-function mainGame() {
-    const online = new Online();
-    const game = new Game(online)
-    const ui = new UI(online, game.setUserName.bind(game), game.enterGameScreen.bind(game));
-    ui.enterStartScreen();
-}
-
-mainGame();
+const online = new Online();
+const game = new Game(online)
+const ui = new UI(online, game.setUserName.bind(game), game.enterGameScreen.bind(game));
+ui.enterStartScreen();

@@ -109,7 +109,8 @@ class Player {
 
 
 export class Game {
-    constructor(userName = undefined, gameTable = undefined) {
+    constructor(online, userName = undefined, gameTable = undefined) {
+        this.online = online;
         this.userName = userName;
         this.gameTable = gameTable;
         this.test_tile;

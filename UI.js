@@ -36,6 +36,10 @@ export class UI {
         this.enterRoomsListScreen()
     }
 
+    enterRoomsListScreenAgain() {
+        document.body.append(this.divContainerRoomsListScreen);
+    }
+
     enterRoomsListScreen() {
         this.divContainerRoomsListScreen.style =
             "width: 100%;" +
@@ -49,7 +53,6 @@ export class UI {
         let updateRoomListButton = document.createElement('button');
         updateRoomListButton.textContent = 'Обновить список комнат';
         updateRoomListButton.onclick = () => {
-            console.log('1312312312312');
             console.log(this.online)
             this.online.getRoomList().then((rooms) => {
                 console.log(rooms);
@@ -74,7 +77,11 @@ export class UI {
         let createButton = document.createElement('button');
         createButton.textContent = 'Создать комнату';
         createButton.onclick = () => {
-            this.online.createGame();
+            this.online.createGame().then(()=>{
+                this.roomId = this.online.roomId;
+                this.exitRoomsListScreen();
+                this.enterRoomScreen();
+            });
         };
         enterButton.textContent = "Войти";
         enterButton.className = 'flexitem';
@@ -136,7 +143,7 @@ export class UI {
                     break;
                 case true:
                     this.setTimeTextToUpperRight('Будет выполнен переход в игровую комнату');
-                    setTimeout(()=>{
+                    setTimeout(() => {
                         this.exitRoomsListScreen();
                         this.enterRoomScreen();
                     }, 1000);
@@ -166,6 +173,7 @@ export class UI {
         updateButton.textContent = 'Обновить';
         updateButton.onclick = () => {
             this.online.getRoomList().then((rooms) => {
+                    console.log(this.roomId);
                     this.fillRoom(rooms[this.roomId]);
                 }
             )
@@ -175,10 +183,10 @@ export class UI {
         let leaveButton = document.createElement('button');
         leaveButton.id = 'leaveButton';
         leaveButton.textContent = 'Выйти из комнаты';
-        leaveButton.onclick = ()=>{
+        leaveButton.onclick = () => {
             this.online.leaveGame();
             this.exitRoomScreen();
-            this.enterRoomsListScreen();
+            this.enterRoomsListScreenAgain();
         }
         // "appending"
         document.body.append(this.divContainerRoomScreen);
@@ -215,7 +223,7 @@ export class UI {
         }
     }
 
-    exitRoomScreen(){
+    exitRoomScreen() {
         this.divContainerRoomScreen.remove()
     }
 }
